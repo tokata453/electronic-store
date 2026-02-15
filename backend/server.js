@@ -1,19 +1,176 @@
+// server.js - Main entry point for the Express server
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const app = express();
-require('dotenv').config();
+const morgan = require('morgan');
+const db = require('./models');
 
-// Middleware
+const app = express();
+const PORT = process.env.PORT || 5000;
+
+// ===============================================
+// Middleware Setup
+// ===============================================
+
+// Enable CORS for all routes
 app.use(cors());
+
+// Parse JSON bodies
 app.use(express.json());
 
+// Parse URL-encoded bodies
+app.use(express.urlencoded({ extended: true }));
+
+// HTTP request logger
+app.use(morgan('dev'));
+
+// Serve static files from the 'public' directory
+app.use(express.static('public'));
+
+// ===============================================
 // Routes
+// ===============================================
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.send({ 
+    status: 'OK', 
+    message: "Server is running smoothly", 
+    environment: process.env.NODE_ENV || 'development',
+    timestamp: new Date() });
+});
+
+// API info endpoint
+app.get('/api', (req, res) => {
+  res.send({
+    message: 'Welcome to the Electronic Store API!',
+    version: '1.0.0',
+    endpoints: {
+      products: '/api/products',
+      categories: '/api/categories',
+      users: '/api/users',
+      orders: '/api/orders'
+    },
+    documentation: 'Coming soon...',
+  });
+});
+
+// Base route
 app.get('/', (req, res) => {
-  res.send('Welcome to the Electronic Store API!');
+  res.redirect('/api');
+});
+
+// // Import routes (we'll create these next)
+// const authRoutes = require('./routes/auth');
+// const productRoutes = require('./routes/products');
+// const categoryRoutes = require('./routes/categories');
+// const orderRoutes = require('./routes/orders');
+// const userRoutes = require('./routes/users');
+
+// // Use routes 
+// app.use('/api/auth', authRoutes);
+// app.use('/api/products', productRoutes);
+// app.use('/api/categories', categoryRoutes);
+// app.use('/api/orders', orderRoutes);
+// app.use('/api/users', userRoutes);
+
+// ===============================================
+// Error Handling Middleware
+// ===============================================
+
+// 404 handler - Route not found
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    error: {
+      message: 'Route not found',
+      status: 404,
+      path: req.originalUrl
+    }
+  });
+});
+
+// Global error handler
+app.use((err, req, res, next) => {
+  console.error('❌ Error:', err);
+  
+  res.status(err.status || 500).json({
+    success: false,
+    error: {
+      message: err.message || 'Internal Server Error',
+      status: err.status || 500,
+      ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+    }
+  });
+});
+
+
+// Database and Server Startup
+const startServer = async () => {
+  try {
+    // Test database connection
+    await db.sequelize.authenticate();
+    console.log('✅ Database connection established');
+    console.log(`📊 Database: ${db.sequelize.config.database}`);
+    console.log(`🏠 Host: ${db.sequelize.config.host}`);
+    
+    // Sync models with database - create tables if they don't exist, but do not alter existing tables
+    await db.sequelize.sync({ alter: false }); // No changes, safe for production
+    console.log('✅ Database models synchronized');
+    
+    // Start Express server
+    app.listen(PORT, () => {
+      console.log('\n🚀 Server started successfully!');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log(`📍 Server URL: http://localhost:${PORT}`);
+      console.log(`📍 API Base: http://localhost:${PORT}/api`);
+      console.log(`🏥 Health Check: http://localhost:${PORT}/health`);
+      console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+      console.log(`⏰ Started at: ${new Date().toLocaleString()}`);
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+      console.log('💡 Press Ctrl+C to stop the server\n');
+    });
+    
+  } catch (error) {
+    console.error('❌ Failed to start server:', error.message);
+    console.error('\nTroubleshooting:');
+    console.error('1. Check your DATABASE_URL in .env file');
+    console.error('2. Make sure all dependencies are installed: npm install');
+    console.error('3. Verify your database is accessible\n');
+    process.exit(1);
+  }
+};
+
+// Handle SIGINT (Ctrl+C)
+process.on('SIGINT', async () => {
+  console.log('\n⚠️  Shutting down gracefully...');
+  try {
+    await db.sequelize.close();
+    console.log('✅ Database connection closed');
+    console.log('👋 Server stopped');
+    process.exit(0);
+  } catch (error) {
+    console.error('❌ Error during shutdown:', error);
+    process.exit(1);
+  }
+});
+
+// Handle SIGTERM
+process.on('SIGTERM', async () => {
+  console.log('\n⚠️  Shutting down gracefully...');
+  try {
+    await db.sequelize.close();
+    console.log('✅ Database connection closed');
+    console.log('👋 Server stopped');
+    process.exit(0);
+  } catch (error) {
+    console.error('❌ Error during shutdown:', error);
+    process.exit(1);
+  }
 });
 
 // Start the server
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, HOST, () => {
-    console.log(`Server is running on http://localhost:${PORT}`);
-});
+startServer();  
+
+// Export app for testing
+module.exports = app;
