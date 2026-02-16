@@ -13,6 +13,9 @@ const PORT = process.env.PORT || 5001;
 // Middleware Setup
 // ===============================================
 
+// Trust proxy for Railway/Render deployment
+app.set('trust proxy', 1);
+
 // Enable CORS for all routes
 app.use(cors({
   origin: '*', // Allow all origins in development
@@ -128,8 +131,14 @@ const startServer = async () => {
     console.log(`🏠 Host: ${db.sequelize.config.host}`);
 
     // Sync models with database - create tables if they don't exist, but do not alter existing tables
-    await db.sequelize.sync({ alter: false }); // No changes, safe for production
-    console.log("✅ Database models synchronized");
+    // Only sync in development
+    if (process.env.NODE_ENV !== 'production') {
+      await db.sequelize.sync({ alter: false });
+      console.log("✅ Database models synchronized");
+    } else {
+      // In production, just verify connection
+      console.log("✅ Production mode - skipping sync");
+    }
 
     // Start Express server
     app.listen(PORT, () => {
