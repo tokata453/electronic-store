@@ -1,6 +1,7 @@
 // controllers/productController.js
 const { Product, Category } = require('../models');
 const { Op } = require('sequelize');
+const appError = require('../utils/appError');
 
 /**
  * @desc    Get all products with filtering, sorting, and pagination
@@ -109,13 +110,7 @@ const getProduct = async (req, res, next) => {
     });
 
     if (!product) {
-      return res.status(404).json({
-        success: false,
-        error: {
-          message: 'Product not found',
-          status: 404
-        }
-      });
+      return next(new appError('Product not found', 404));
     }
 
     // Increment views
@@ -157,25 +152,13 @@ const createProduct = async (req, res, next) => {
 
     // Validate required fields
     if (!name || !price || !categoryId) {
-      return res.status(400).json({
-        success: false,
-        error: {
-          message: 'Please provide name, price, and category',
-          status: 400
-        }
-      });
+      return next(new appError('Please provide name, price, and category', 400));
     }
 
     // Check if category exists
     const category = await Category.findByPk(categoryId);
     if (!category) {
-      return res.status(404).json({
-        success: false,
-        error: {
-          message: 'Category not found',
-          status: 404
-        }
-      });
+      return next(new appError('Category not found', 404));
     }
 
     // Create product
@@ -217,15 +200,9 @@ const updateProduct = async (req, res, next) => {
     const product = await Product.findByPk(req.params.id);
 
     if (!product) {
-      return res.status(404).json({
-        success: false,
-        error: {
-          message: 'Product not found',
-          status: 404
-        }
-      });
+      return next(new appError('Product not found', 404));
     }
-
+    
     // Update product
     await product.update(req.body);
 

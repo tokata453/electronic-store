@@ -95,31 +95,14 @@ app.use("/api/users", userRoutes);
 // Error Handling Middleware
 // ===============================================
 
+// Import error handlers
+const {notFoundHandler, globalErrorHandler} = require("./middleware/errorHandler");
+
 // 404 handler - Route not found
-app.use((req, res) => {
-  res.status(404).json({
-    success: false,
-    error: {
-      message: "Route not found",
-      status: 404,
-      path: req.originalUrl,
-    },
-  });
-});
+app.use(notFoundHandler);
 
 // Global error handler
-app.use((err, req, res, next) => {
-  console.error("❌ Error:", err);
-
-  res.status(err.status || 500).json({
-    success: false,
-    error: {
-      message: err.message || "Internal Server Error",
-      status: err.status || 500,
-      ...(process.env.NODE_ENV === "development" && { stack: err.stack }),
-    },
-  });
-});
+app.use(globalErrorHandler);
 
 // Database and Server Startup
 const startServer = async () => {

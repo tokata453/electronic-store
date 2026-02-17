@@ -1,6 +1,7 @@
 // controllers/orderController.js
 const { Order, OrderItem, Product, User } = require('../models');
 const { sequelize } = require('../models');
+const appError = require('../utils/appError');
 
 /**
  * @desc    Create new order
@@ -22,24 +23,12 @@ const createOrder = async (req, res, next) => {
     // Validate required fields
     if (!items || items.length === 0) {
       await t.rollback();
-      return res.status(400).json({
-        success: false,
-        error: {
-          message: 'Order must contain at least one item',
-          status: 400
-        }
-      });
+      return next(new appError('Order must contain at least one item', 400));
     }
 
     if (!shippingAddress) {
       await t.rollback();
-      return res.status(400).json({
-        success: false,
-        error: {
-          message: 'Shipping address is required',
-          status: 400
-        }
-      });
+      return next(new appError('Shipping address is required', 400));
     }
 
     // Calculate order totals and validate products
@@ -51,24 +40,12 @@ const createOrder = async (req, res, next) => {
 
       if (!product) {
         await t.rollback();
-        return res.status(404).json({
-          success: false,
-          error: {
-            message: `Product with ID ${item.productId} not found`,
-            status: 404
-          }
-        });
+        return next(new appError(`Product with ID ${item.productId} not found`, 404));
       }
 
       if (product.stock < item.quantity) {
         await t.rollback();
-        return res.status(400).json({
-          success: false,
-          error: {
-            message: `Insufficient stock for ${product.name}. Available: ${product.stock}`,
-            status: 400
-          }
-        });
+        return next(new appError(`Insufficient stock for ${product.name}. Available: ${product.stock}`, 400));
       }
 
       // Calculate price (use salePrice if available)
@@ -204,24 +181,12 @@ const getOrder = async (req, res, next) => {
     });
 
     if (!order) {
-      return res.status(404).json({
-        success: false,
-        error: {
-          message: 'Order not found',
-          status: 404
-        }
-      });
+      return next(new appError('Order not found', 404));
     }
 
     // Check if user owns this order or is admin
     if (order.userId !== req.user.id && req.user.role !== 'admin') {
-      return res.status(403).json({
-        success: false,
-        error: {
-          message: 'Not authorized to access this order',
-          status: 403
-        }
-      });
+      return next(new appError('Not authorized to access this order', 403));
     }
 
     res.status(200).json({
@@ -248,26 +213,14 @@ const updateOrderStatus = async (req, res, next) => {
     const order = await Order.findByPk(req.params.id);
 
     if (!order) {
-      return res.status(404).json({
-        success: false,
-        error: {
-          message: 'Order not found',
-          status: 404
-        }
-      });
+      return next(new appError('Order not found', 404));
     }
 
     // Valid status transitions
     const validStatuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded'];
     
     if (status && !validStatuses.includes(status)) {
-      return res.status(400).json({
-        success: false,
-        error: {
-          message: 'Invalid order status',
-          status: 400
-        }
-      });
+      return next(new appError('Invalid order status', 400));
     }
 
     // Update order

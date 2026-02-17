@@ -1,10 +1,11 @@
 // controllers/authController.js
 const { User } = require('../models');
 const generateToken = require('../utils/generateToken');
+const AppError = require('../utils/appError');
 
 /**
- * @desc    Register new user
- * @route   POST /api/auth/register
+ * @desc    Register new user 
+ * @route   POST /api/auth/register 
  * @access  Public
  */
 const register = async (req, res, next) => {
@@ -13,25 +14,13 @@ const register = async (req, res, next) => {
 
     // Validate required fields
     if (!firstName || !lastName || !email || !password) {
-      return res.status(400).json({
-        success: false,
-        error: {
-          message: 'Please provide all required fields',
-          status: 400
-        }
-      });
+      return next(new AppError('Please provide all required fields', 400));      
     }
 
     // Check if user already exists
     const existingUser = await User.findOne({ where: { email } });
     if (existingUser) {
-      return res.status(400).json({
-        success: false,
-        error: {
-          message: 'Email already registered',
-          status: 400
-        }
-      });
+      return next(new AppError('Email already registered', 400));
     }
 
     // Create user
@@ -78,50 +67,26 @@ const login = async (req, res, next) => {
 
     // Validate required fields
     if (!email || !password) {
-      return res.status(400).json({
-        success: false,
-        error: {
-          message: 'Please provide email and password',
-          status: 400
-        }
-      });
+      return next(new AppError('Please provide email and password', 400));
     }
 
     // Find user by email (include password for comparison)
     const user = await User.findOne({ where: { email } });
 
     if (!user) {
-      return res.status(401).json({
-        success: false,
-        error: {
-          message: 'Invalid credentials',
-          status: 401
-        }
-      });
+      return next(new AppError('Invalid credentials', 401));
     }
 
     // Check if account is active
     if (!user.isActive) {
-      return res.status(401).json({
-        success: false,
-        error: {
-          message: 'Account is deactivated',
-          status: 401
-        }
-      });
+      return next(new AppError('Account is deactivated', 401));
     }
 
     // Check password
     const isPasswordValid = await user.comparePassword(password);
 
     if (!isPasswordValid) {
-      return res.status(401).json({
-        success: false,
-        error: {
-          message: 'Invalid credentials',
-          status: 401
-        }
-      });
+      return next(new AppError('Invalid credentials', 401));
     }
 
     // Generate token

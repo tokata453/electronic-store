@@ -1,5 +1,6 @@
 // controllers/categoryController.js
 const { Category, Product } = require('../models');
+const AppError = require('../utils/appError');
 
 /**
  * @desc    Get all categories
@@ -49,13 +50,7 @@ const getCategory = async (req, res, next) => {
     });
 
     if (!category) {
-      return res.status(404).json({
-        success: false,
-        error: {
-          message: 'Category not found',
-          status: 404
-        }
-      });
+      return next(new AppError('Category not found', 404));
     }
 
     res.status(200).json({
@@ -81,13 +76,7 @@ const createCategory = async (req, res, next) => {
 
     // Validate required fields
     if (!name) {
-      return res.status(400).json({
-        success: false,
-        error: {
-          message: 'Please provide category name',
-          status: 400
-        }
-      });
+      return next(new AppError('Please provide category name', 400));
     }
 
     // Create category
@@ -123,13 +112,7 @@ const updateCategory = async (req, res, next) => {
     const category = await Category.findByPk(req.params.id);
 
     if (!category) {
-      return res.status(404).json({
-        success: false,
-        error: {
-          message: 'Category not found',
-          status: 404
-        }
-      });
+      return next(new AppError('Category not found', 404));
     }
 
     // Update category
@@ -157,13 +140,7 @@ const deleteCategory = async (req, res, next) => {
     const category = await Category.findByPk(req.params.id);
 
     if (!category) {
-      return res.status(404).json({
-        success: false,
-        error: {
-          message: 'Category not found',
-          status: 404
-        }
-      });
+      return next(new AppError('Category not found', 404));
     }
 
     // Check if category has products
@@ -172,13 +149,7 @@ const deleteCategory = async (req, res, next) => {
     });
 
     if (productCount > 0) {
-      return res.status(400).json({
-        success: false,
-        error: {
-          message: `Cannot delete category with ${productCount} products. Please reassign or delete products first.`,
-          status: 400
-        }
-      });
+      return next(new AppError(`Cannot delete category with ${productCount} products. Please reassign or delete products first.`, 400));
     }
 
     // Soft delete

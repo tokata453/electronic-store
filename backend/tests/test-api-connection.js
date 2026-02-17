@@ -2,6 +2,7 @@
 const axios = require('axios');
 
 const BASE_URL = `http://localhost:${process.env.PORT || 3001}`;
+// const BASE_URL = `https://electronic-store-production-0f93.up.railway.app`; // Change to your deployed URL if testing against production
 
 // Colors for console
 const colors = {

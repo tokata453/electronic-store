@@ -1,10 +1,13 @@
 // middleware/auth.js
 const jwt = require('jsonwebtoken');
 const { User } = require('../models');
+const AppError = require('../utils/appError');
 
 /**
  * Protect routes - verify JWT token
  * Usage: app.get('/protected', protect, handler)
+ * @requires JWT token in Authorization header (Bearer TOKEN)
+ * @returns 401 if token is missing, invalid, or user no longer exists
  */
 const protect = async (req, res, next) => {
   try {
@@ -21,13 +24,7 @@ const protect = async (req, res, next) => {
 
     // Check if token exists
     if (!token) {
-      return res.status(401).json({
-        success: false,
-        error: {
-          message: 'Not authorized to access this route',
-          status: 401
-        }
-      });
+      return next(new AppError('Not authorized token to access', 401));
     }
 
     try {
@@ -40,23 +37,11 @@ const protect = async (req, res, next) => {
       });
 
       if (!user) {
-        return res.status(401).json({
-          success: false,
-          error: {
-            message: 'User no longer exists',
-            status: 401
-          }
-        });
+        return next(new AppError('User no longer exists', 401));
       }
 
       if (!user.isActive) {
-        return res.status(401).json({
-          success: false,
-          error: {
-            message: 'User account is deactivated',
-            status: 401
-          }
-        });
+        return next(new AppError('User account is deactivated', 401));
       }
 
       // Attach user to request object
@@ -64,13 +49,7 @@ const protect = async (req, res, next) => {
       next();
 
     } catch (error) {
-      return res.status(401).json({
-        success: false,
-        error: {
-          message: 'Invalid token',
-          status: 401
-        }
-      });
+      return next(new AppError('Invalid token', 401));
     }
 
   } catch (error) {

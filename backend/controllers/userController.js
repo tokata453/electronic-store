@@ -1,6 +1,7 @@
 // controllers/userController.js
 const { User } = require('../models');
 const bcrypt = require('bcryptjs');
+const AppError = require('../utils/appError');
 
 /**
  * @desc    Get user profile
@@ -38,13 +39,7 @@ const updateProfile = async (req, res, next) => {
     const user = await User.findByPk(req.user.id);
 
     if (!user) {
-      return res.status(404).json({
-        success: false,
-        error: {
-          message: 'User not found',
-          status: 404
-        }
-      });
+      return next(new AppError('User not found', 404));
     }
 
     // Update allowed fields only
@@ -85,49 +80,25 @@ const changePassword = async (req, res, next) => {
 
     // Validate required fields
     if (!currentPassword || !newPassword) {
-      return res.status(400).json({
-        success: false,
-        error: {
-          message: 'Please provide current password and new password',
-          status: 400
-        }
-      });
+      return next(new AppError('Please provide current password and new password', 400));
     }
 
     // Validate new password length
     if (newPassword.length < 6) {
-      return res.status(400).json({
-        success: false,
-        error: {
-          message: 'New password must be at least 6 characters',
-          status: 400
-        }
-      });
+      return next(new AppError('New password must be at least 6 characters', 400));
     }
 
     const user = await User.findByPk(req.user.id);
 
     if (!user) {
-      return res.status(404).json({
-        success: false,
-        error: {
-          message: 'User not found',
-          status: 404
-        }
-      });
+      return next(new AppError('User not found', 404));
     }
 
     // Check current password
     const isPasswordValid = await user.comparePassword(currentPassword);
 
     if (!isPasswordValid) {
-      return res.status(401).json({
-        success: false,
-        error: {
-          message: 'Current password is incorrect',
-          status: 401
-        }
-      });
+      return next(new AppError('Current password is incorrect', 401));
     }
 
     // Update password (will be hashed by model hook)
@@ -145,8 +116,136 @@ const changePassword = async (req, res, next) => {
   }
 };
 
+// ===================================================
+// Admin controllers
+// ===================================================
+
+/**
+ * @desc    Get all users (admin only)
+ * @route   GET /api/users
+ * @access  Private/Admin
+ */
+const getUsers = async (req, res, next) => {
+  try {
+    const users = await User.findAll({
+      attributes: { exclude: ['password'] }
+    });
+
+    res.status(200).json({
+      success: true,
+      data: {
+        users
+      }
+    });
+
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @desc    Get user by ID (admin only)
+ * @route   GET /api/users/:id
+ * @access  Private/Admin
+ */
+const getUserById = async (req, res, next) => {
+  try {
+    const user = await User.findByPk(req.params.id, {
+      attributes: { exclude: ['password'] }
+    });
+
+    if (!user) {
+      return next(new AppError('User not found', 404));
+    }
+
+    res.status(200).json({
+      success: true,
+      data: {
+        user
+      }
+    });
+
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @desc    Update user (admin only)
+ * @route   PUT /api/users/:id
+ * @access  Private/Admin
+ */
+const updateUser = async (req, res, next) => {
+  try {
+    const { firstName, lastName, email, phone, role, isActive } = req.body;
+
+    const user = await User.findByPk(req.params.id);
+
+    if (!user) {
+      return next(new AppError('User not found', 404));
+    }
+
+    // Update allowed fields only
+    const updateData = {};
+    if (firstName) updateData.firstName = firstName;
+    if (lastName) updateData.lastName = lastName;
+    if (email) updateData.email = email;
+    if (phone) updateData.phone = phone;
+    if (role) updateData.role = role;
+    if (isActive !== undefined) updateData.isActive = isActive;
+
+    await user.update(updateData);
+
+    // Return user without password
+    const updatedUser = await User.findByPk(user.id, {
+      attributes: { exclude: ['password'] }
+    });
+
+    res.status(200).json({
+      success: true,
+      data: {
+        user: updatedUser
+      }
+    });
+
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @desc    Delete user (admin only)
+ * @route   DELETE /api/users/:id
+ * @access  Private/Admin
+ */
+const deleteUser = async (req, res, next) => {
+  try {
+    const user = await User.findByPk(req.params.id);
+
+    if (!user) {
+      return next(new AppError('User not found', 404));
+    }
+
+    await user.destroy();
+
+    res.status(200).json({
+      success: true,
+      data: {
+        message: 'User deleted successfully'
+      }
+    });
+
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getProfile,
   updateProfile,
-  changePassword
+  changePassword,
+  getUsers,
+  getUserById,
+  updateUser,
+  deleteUser
 };
