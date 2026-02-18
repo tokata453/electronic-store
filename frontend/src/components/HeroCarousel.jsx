@@ -1,51 +1,83 @@
-// Import Swiper and modules
+import * as React from "react"
+import Autoplay from "embla-carousel-autoplay"
 
-import { Swiper, SwiperSlide } from 'swiper/react';
-import 'swiper/css';
-import 'swiper/css/pagination';
-import 'swiper/css/navigation';
-import { Autoplay, Pagination, Navigation } from 'swiper/modules';
+import { Button } from "@/components/ui/button"
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel"
 
-export default function HeroCarousel() {
-    // images
-    const slides = [
-        { id: 1, image: "pc.jpg" },
-        { id: 2, image: "rtx4090.jpg" },
-        { id: 3, image: "test.webp" }
-    ];
-    return (
-    // size control
-    <div className="max-w-5xl h-125 mx-auto justify-center items-center rounded-2xl overflow-hidden">
-      <Swiper
+const slides = [ 
+  // 1920x1080p images
+  {
+    id: 1,
+    title: "Summer Collection",
+    description: "Discover our latest summer styles designed for comfort and elegance.",
+    cta: "Shop Now",
+    image: "/test.webp",
+  },
+  {
+    id: 2,
+    title: "New Arrivals",
+    description: "Be the first to explore our brand new inventory hitting the shelves today.",
+    cta: "View New",
+    image: "https://images.unsplash.com/photo-1540221652346-e5dd6b50f3e7?auto=format&fit=crop&q=80&w=2000",
+  },
+  {
+    id: 3,
+    title: "Exclusive Offers",
+    description: "Members get up to 50% off on selected items this weekend only.",
+    cta: "Join Now",
+    image: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&q=80&w=2000",
+  },
+]
 
-        speed={1000} // speed of transition
-        spaceBetween={0}
-        centeredSlides={true}
-        loop={true} // loop to first image 
-        autoplay={{
-          delay: 4000, // display time for each image
-          disableOnInteraction: false,
+const HeroCarousel = () => {
+  // Autoscroll for images
+  const plugin = React.useRef(
+    Autoplay({ delay: 4000, stopOnInteraction: true }) // time between each image
+  )
+
+  return (
+    <div className="mx-auto w-full max-w-8xl px-4 py-6">
+      <Carousel
+        plugins={[plugin.current]}
+        className="w-full"
+        onMouseEnter={plugin.current.stop} //Stop on hover
+        onMouseLeave={plugin.current.reset}
+        opts={{
+          loop: true,
         }}
-        pagination={{clickable: true,}}
-        navigation={true}
-        modules={[Autoplay, Pagination, Navigation]}
-        className="w-full h-full"
       >
-        {slides.map((slide) => (
-          <SwiperSlide key={slide.id}>
-            {/* Slide Content */}
-            <div className="relative w-full h-full">
-              {/* Background Image */}
-              <img 
-                src={slide.image} 
-                alt={slide.title}
-                className="w-full h-full object-cover" 
-              />
-
-            </div>
-          </SwiperSlide>
-        ))}
-      </Swiper>
+        <CarouselContent>
+          {slides.map((slide) => (
+            <CarouselItem key={slide.id}>
+              <div className="relative w-full h-150 overflow-hidden rounded-lg">
+                <img
+                  src={slide.image}
+                  alt={slide.title}
+                  className="absolute inset-0 h-full w-full object-cover"
+                />
+                <div className="absolute inset-0 bg-black/40" />
+                <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center text-white">
+                  <h2 className="mb-2 text-3xl font-bold">{slide.title}</h2>
+                  <p className="mb-6 max-w-md text-sm font-medium opacity-90">
+                    {slide.description}
+                  </p>
+                  <Button variant="secondary">{slide.cta}</Button>
+                </div>
+              </div>
+            </CarouselItem>
+          ))}
+        </CarouselContent>
+        <CarouselPrevious className="left-4" />
+        <CarouselNext className="right-4" />
+      </Carousel>
     </div>
-  );
+  )
 }
+
+export default HeroCarousel
