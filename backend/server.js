@@ -32,7 +32,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(morgan("dev"));
 
 // Serve static files
-app.use("/uploads", express.static(path.join(__dirname, "public/uploads")));
+app.use(express.static(path.join(__dirname, "public")));
 
 // ===============================================
 // Routes
@@ -61,8 +61,7 @@ app.get("/api", (req, res) => {
       categories: "/api/categories",
       users: "/api/users",
       orders: "/api/orders",
-      cloudinary: "/api/cloudinary",
-      uploads: "/api/uploads"
+      upload: "/api/upload"
     },
     documentation: "https://github.com/yourusername/api-docs"
   });
@@ -79,15 +78,13 @@ const productRoutes = require("./routes/products");
 const categoryRoutes = require("./routes/categories");
 const orderRoutes = require("./routes/orders");
 const userRoutes = require("./routes/users");
-const uploadRoutes = require("./routes/uploads");
-const cloudinaryUploadRoutes = require("./routes/uploadCloudinary");
+const uploadRoutes = require('./routes/upload');
 
 // Use routes
 app.use("/api/auth", authRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/categories", categoryRoutes);
-app.use("/api/cloudinary", cloudinaryUploadRoutes);
-app.use("/api/uploads", uploadRoutes);
+app.use('/api/upload', uploadRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/users", userRoutes);
 
@@ -115,13 +112,13 @@ const startServer = async () => {
 
     // Sync models with database - create tables if they don't exist, but do not alter existing tables
     // Only sync in development
-    if (process.env.NODE_ENV !== 'production') {
-      await db.sequelize.sync({ alter: false });
-      console.log("✅ Database models synchronized");
-    } else {
-      // In production, just verify connection
-      console.log("✅ Production mode - skipping sync");
-    }
+    // if (process.env.NODE_ENV !== 'production') {
+    //   await db.sequelize.sync({ alter: false });
+    //   console.log("✅ Database models synchronized");
+    // } else {
+    //   // In production, just verify connection
+    //   console.log("✅ Production mode - skipping sync");
+    // }
 
     // Start Express server
     app.listen(PORT, () => {

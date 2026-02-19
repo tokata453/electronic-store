@@ -15,6 +15,7 @@
   "license": "ISC",
   "description": "Backend for the electronic store application",
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.967.0",
     "axios": "^1.13.5",
     "bcryptjs": "^3.0.3",
     "cloudinary": "^2.9.0",

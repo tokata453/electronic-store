@@ -30,6 +30,10 @@ const createOrder = async (req, res, next) => {
       await t.rollback();
       return next(new appError('Shipping address is required', 400));
     }
+    if (!paymentMethod) {
+      await t.rollback();
+      return next(new appError('Payment method is required', 400));
+    }
 
     // Calculate order totals and validate products
     let subtotal = 0;

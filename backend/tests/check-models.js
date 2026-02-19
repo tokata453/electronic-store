@@ -45,7 +45,7 @@ async function checkModels() {
     // Try to sync models to database
     console.log('🔄 Attempting to create tables in database...\n');
     
-    await db.sequelize.sync({ force: false, alter: true });
+    await db.sequelize.sync({ force: true});
     
     console.log('✅ Database tables created/updated successfully!\n');
     
