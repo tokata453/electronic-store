@@ -25,6 +25,9 @@ const state = {
   newProductId: null,
   newCategoryId: null,
   newOrderId: null,
+  uploadedProductImages: [],
+  uploadedCategoryImage: null,
+  uploadedAvatar: null,
 };
 
 let passed = 0;
@@ -155,7 +158,6 @@ async function testAuth() {
       body: {
         email: 'admin@iceelectronics.com',
         password: 'wrongpassword',
-
       },
     });
 
@@ -279,18 +281,17 @@ async function testCategories() {
 
   // ── Update ─────────────────────────────────
   await test('PUT /api/categories/:id - Admin updates category', async () => {
-    const name = `Updated Test Category ${Date.now()}`;
+    const newName = `Updated Test Category ${Date.now()}`;
     const { status, data } = await request('PUT', `/api/categories/${state.newCategoryId}`, {
       token: state.adminToken,
       body: {
-        name: name,
-        slug: `updated-test-category-${Date.now()}`,
+        name: newName,
         sortOrder: 100,
       },
     });
 
-    assert(status === 200, `Expected 200, got ${status}`);
-    assert(data.data.category.name === name, 'Name should be updated');
+    assert(status === 200, `Expected 200, got ${status} with ${state.newCategoryId}`);
+    assert(data.data.category.name === newName, `Name should be updated to ${newName}`);
   });
 
   // ── Delete ─────────────────────────────────
@@ -459,7 +460,7 @@ async function testOrders() {
   // ── Create Order ───────────────────────────
   await test('POST /api/orders - Customer creates order', async () => {
     const { status, data } = await request('POST', '/api/orders', {
-      token: state.adminToken,
+      token: state.customerToken,
       body: {
         items: [
           { productId: 1, quantity: 1 },
@@ -517,7 +518,7 @@ async function testOrders() {
     const { status } = await request('POST', '/api/orders', {
       token: state.customerToken,
       body: {
-        items: [{ productId: 9999, quantity: 1 }],
+        items: [{ productId: 99999, quantity: 1 }],
         shippingAddress: { name: 'Test', street: '123', city: 'PP', country: 'KH' },
         paymentMethod: 'cash',
       },
@@ -544,12 +545,12 @@ async function testOrders() {
 
   // ── Get Single Order ───────────────────────
   await test('GET /api/orders/:id - Get own order by id', async () => {
-    const { status, data } = await request('GET', `/api/orders/4`, {
+    const { status, data } = await request('GET', `/api/orders/${state.newOrderId}`, {
       token: state.customerToken,
     });
 
     assert(status === 200, `Expected 200, got ${status}`);
-    assert(data.data.order.id === 4, 'Expected matching order id');
+    assert(data.data.order.id === state.newOrderId, 'Expected matching order id');
     assert(Array.isArray(data.data.order.items), 'Expected items');
   });
 
@@ -772,7 +773,373 @@ async function testUsers() {
 }
 
 // ═════════════════════════════════════════════
-// 6. 404 & ERROR HANDLING TESTS
+// 6. UPLOAD TESTS
+// ═════════════════════════════════════════════
+async function testUploads() {
+  title('📤 UPLOAD ENDPOINTS');
+
+  // Helper to create test image
+  function createTestImage() {
+    // 1x1 transparent PNG (67 bytes)
+    return Buffer.from(
+      '89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c489' +
+      '0000000a49444154789c6360000000020001e221bc330000000049454e44ae426082',
+      'hex'
+    );
+  }
+
+  // Helper to create multipart form data
+  function createFormData(files) {
+    const boundary = '----WebKitFormBoundary' + Math.random().toString(36);
+    const parts = [];
+
+    files.forEach(({ fieldName, filename, data, contentType }) => {
+      parts.push(`--${boundary}\r\n`);
+      parts.push(`Content-Disposition: form-data; name="${fieldName}"; filename="${filename}"\r\n`);
+      parts.push(`Content-Type: ${contentType}\r\n\r\n`);
+      parts.push(data);
+      parts.push('\r\n');
+    });
+
+    parts.push(`--${boundary}--\r\n`);
+
+    const body = Buffer.concat(parts.map(p => typeof p === 'string' ? Buffer.from(p) : p));
+
+    return {
+      body,
+      contentType: `multipart/form-data; boundary=${boundary}`
+    };
+  }
+
+  // ─── Upload single product image ──────────────────────────
+  await test('POST /api/upload/product/:id - Upload single product image', async () => {
+    const imageData = createTestImage();
+    const { body, contentType } = createFormData([
+      {
+        fieldName: 'images',
+        filename: 'test-product-1.png',
+        data: imageData,
+        contentType: 'image/png'
+      }
+    ]);
+
+    const res = await fetch(`${BASE_URL}/api/upload/product/1`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${state.adminToken}`,
+        'Content-Type': contentType
+      },
+      body: body
+    });
+
+    const data = await res.json();
+
+    assert(res.status === 200, `Expected 200, got ${res.status}. Error: ${JSON.stringify(data?.error)}`);
+    assert(data.success === true, 'Expected success: true');
+    assert(data.data.message, 'Expected message');
+    assert(Array.isArray(data.data.uploadedUrls), 'Expected uploadedUrls array');
+    assert(data.data.uploadedUrls.length === 1, 'Expected 1 uploaded URL');
+    assert(Array.isArray(data.data.allImages), 'Expected allImages array');
+
+    state.uploadedProductImages.push(...data.data.uploadedUrls);
+  });
+
+  // ─── Upload multiple product images ───────────────────────
+  await test('POST /api/upload/product/:id - Upload multiple images', async () => {
+    const imageData = createTestImage();
+    const { body, contentType } = createFormData([
+      {
+        fieldName: 'images',
+        filename: 'test-product-2.png',
+        data: imageData,
+        contentType: 'image/png'
+      },
+      {
+        fieldName: 'images',
+        filename: 'test-product-3.png',
+        data: imageData,
+        contentType: 'image/png'
+      }
+    ]);
+
+    const res = await fetch(`${BASE_URL}/api/upload/product/1`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${state.adminToken}`,
+        'Content-Type': contentType
+      },
+      body: body
+    });
+
+    const data = await res.json();
+
+    assert(res.status === 200, `Expected 200, got ${res.status}`);
+    assert(data.data.uploadedUrls.length === 2, 'Expected 2 uploaded URLs');
+    assert(data.data.message.includes('2'), 'Message should mention 2 images');
+
+    state.uploadedProductImages.push(...data.data.uploadedUrls);
+  });
+
+  // ─── Delete product image ─────────────────────────────────
+  await test('DELETE /api/upload/product/:id/image - Delete image', async () => {
+    assert(state.uploadedProductImages.length > 0, 'No uploaded images to delete');
+
+    const imageToDelete = state.uploadedProductImages[0];
+
+    const { status, data } = await request('DELETE', '/api/upload/product/1/image', {
+      token: state.adminToken,
+      body: { imageUrl: imageToDelete }
+    });
+
+    assert(status === 200, `Expected 200, got ${status}`);
+    assert(data.data.message, 'Expected message');
+    assert(Array.isArray(data.data.remainingImages), 'Expected remainingImages array');
+
+    state.uploadedProductImages = state.uploadedProductImages.filter(url => url !== imageToDelete);
+  });
+
+  // ─── Upload category image ────────────────────────────────
+  await test('POST /api/upload/category/:id - Upload category image', async () => {
+    const imageData = createTestImage();
+    const { body, contentType } = createFormData([
+      {
+        fieldName: 'image',
+        filename: 'test-category.png',
+        data: imageData,
+        contentType: 'image/png'
+      }
+    ]);
+
+    const res = await fetch(`${BASE_URL}/api/upload/category/1`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${state.adminToken}`,
+        'Content-Type': contentType
+      },
+      body: body
+    });
+
+    const data = await res.json();
+
+    assert(res.status === 200, `Expected 200, got ${res.status}`);
+    assert(data.success === true, 'Expected success: true');
+    assert(data.data.imageUrl, 'Expected imageUrl');
+    assert(data.data.category, 'Expected category object');
+    assert(data.data.category.image === data.data.imageUrl, 'Category should have new image');
+
+    state.uploadedCategoryImage = data.data.imageUrl;
+  });
+
+  // ─── Replace category image ───────────────────────────────
+  await test('POST /api/upload/category/:id - Replace image (old deleted)', async () => {
+    const oldImageUrl = state.uploadedCategoryImage;
+
+    const imageData = createTestImage();
+    const { body, contentType } = createFormData([
+      {
+        fieldName: 'image',
+        filename: 'test-category-new.png',
+        data: imageData,
+        contentType: 'image/png'
+      }
+    ]);
+
+    const res = await fetch(`${BASE_URL}/api/upload/category/1`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${state.adminToken}`,
+        'Content-Type': contentType
+      },
+      body: body
+    });
+
+    const data = await res.json();
+
+    assert(res.status === 200, `Expected 200, got ${res.status}`);
+    assert(data.data.imageUrl !== oldImageUrl, 'New image URL should be different');
+
+    state.uploadedCategoryImage = data.data.imageUrl;
+  });
+
+  // ─── Upload avatar ────────────────────────────────────────
+  await test('POST /api/upload/avatar - Upload user avatar', async () => {
+    const imageData = createTestImage();
+    const { body, contentType } = createFormData([
+      {
+        fieldName: 'image',
+        filename: 'test-avatar.png',
+        data: imageData,
+        contentType: 'image/png'
+      }
+    ]);
+
+    const res = await fetch(`${BASE_URL}/api/upload/avatar`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${state.customerToken}`,
+        'Content-Type': contentType
+      },
+      body: body
+    });
+
+    const data = await res.json();
+
+    assert(res.status === 200, `Expected 200, got ${res.status}`);
+    assert(data.success === true, 'Expected success: true');
+    assert(data.data.avatarUrl, 'Expected avatarUrl');
+    assert(data.data.user, 'Expected user object');
+    assert(data.data.user.avatar === data.data.avatarUrl, 'User should have new avatar');
+
+    state.uploadedAvatar = data.data.avatarUrl;
+  });
+
+  // ─── Replace avatar ───────────────────────────────────────
+  await test('POST /api/upload/avatar - Replace avatar (old deleted)', async () => {
+    const oldAvatarUrl = state.uploadedAvatar;
+
+    const imageData = createTestImage();
+    const { body, contentType } = createFormData([
+      {
+        fieldName: 'image',
+        filename: 'test-avatar-new.png',
+        data: imageData,
+        contentType: 'image/png'
+      }
+    ]);
+
+    const res = await fetch(`${BASE_URL}/api/upload/avatar`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${state.customerToken}`,
+        'Content-Type': contentType
+      },
+      body: body
+    });
+
+    const data = await res.json();
+
+    assert(res.status === 200, `Expected 200, got ${res.status}`);
+    assert(data.data.avatarUrl !== oldAvatarUrl, 'New avatar URL should be different');
+  });
+
+  // ─── Customer cannot upload product images ────────────────
+  await test('POST /api/upload/product/:id - Customer blocked', async () => {
+    const imageData = createTestImage();
+    const { body, contentType } = createFormData([
+      {
+        fieldName: 'images',
+        filename: 'hacker.png',
+        data: imageData,
+        contentType: 'image/png'
+      }
+    ]);
+
+    const res = await fetch(`${BASE_URL}/api/upload/product/1`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${state.customerToken}`,
+        'Content-Type': contentType
+      },
+      body: body
+    });
+
+    assert(res.status === 403, `Expected 403, got ${res.status}`);
+  });
+
+  // ─── Customer cannot upload category images ───────────────
+  await test('POST /api/upload/category/:id - Customer blocked', async () => {
+    const imageData = createTestImage();
+    const { body, contentType } = createFormData([
+      {
+        fieldName: 'image',
+        filename: 'hacker.png',
+        data: imageData,
+        contentType: 'image/png'
+      }
+    ]);
+
+    const res = await fetch(`${BASE_URL}/api/upload/category/1`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${state.customerToken}`,
+        'Content-Type': contentType
+      },
+      body: body
+    });
+
+    assert(res.status === 403, `Expected 403, got ${res.status}`);
+  });
+
+  // ─── No auth rejected ─────────────────────────────────────
+  await test('POST /api/upload/avatar - Rejected without auth', async () => {
+    const imageData = createTestImage();
+    const { body, contentType } = createFormData([
+      {
+        fieldName: 'image',
+        filename: 'noauth.png',
+        data: imageData,
+        contentType: 'image/png'
+      }
+    ]);
+
+    const res = await fetch(`${BASE_URL}/api/upload/avatar`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': contentType
+      },
+      body: body
+    });
+
+    assert(res.status === 401, `Expected 401, got ${res.status}`);
+  });
+
+  // ─── Invalid product ID ───────────────────────────────────
+  await test('POST /api/upload/product/:id - Non-existent product rejected', async () => {
+    const imageData = createTestImage();
+    const { body, contentType } = createFormData([
+      {
+        fieldName: 'images',
+        filename: 'test.png',
+        data: imageData,
+        contentType: 'image/png'
+      }
+    ]);
+
+    const res = await fetch(`${BASE_URL}/api/upload/product/99999`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${state.adminToken}`,
+        'Content-Type': contentType
+      },
+      body: body
+    });
+
+    assert(res.status === 404, `Expected 404, got ${res.status}`);
+  });
+
+  // ─── Delete without imageUrl ──────────────────────────────
+  await test('DELETE /api/upload/product/:id/image - Rejected without imageUrl', async () => {
+    const { status } = await request('DELETE', '/api/upload/product/1/image', {
+      token: state.adminToken,
+      body: {}
+    });
+
+    assert(status === 400, `Expected 400, got ${status}`);
+  });
+
+  // ─── Customer cannot delete ───────────────────────────────
+  await test('DELETE /api/upload/product/:id/image - Customer blocked', async () => {
+    const { status } = await request('DELETE', '/api/upload/product/1/image', {
+      token: state.customerToken,
+      body: { imageUrl: 'https://example.com/image.jpg' }
+    });
+
+    assert(status === 403, `Expected 403, got ${status}`);
+  });
+}
+
+// ═════════════════════════════════════════════
+// 7. 404 & ERROR HANDLING TESTS
 // ═════════════════════════════════════════════
 async function testErrorHandling() {
   title('🚨 ERROR HANDLING');
@@ -799,7 +1166,7 @@ async function testErrorHandling() {
 async function runAll() {
   console.log('\n\x1b[95m');
   console.log('╔═══════════════════════════════════════════╗');
-  console.log('║   🧪  iCE Electronics API Test Suite      ║');
+  console.log('║   🧪  Electronics Store API Test Suite    ║');
   console.log('╚═══════════════════════════════════════════╝');
   console.log('\x1b[0m');
   console.log(`🌐 Testing against: ${BASE_URL}\n`);
@@ -810,6 +1177,7 @@ async function runAll() {
     await testProducts();
     await testOrders();
     await testUsers();
+    await testUploads();
     await testErrorHandling();
   } catch (err) {
     red(`\nUnexpected error in test suite: ${err.message}`);
