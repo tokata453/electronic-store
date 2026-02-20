@@ -1,8 +1,9 @@
 // routes/auth.js
 const express = require('express');
 const router = express.Router();
-const { register, login, getMe } = require('../controllers/authController');
+const { register, login, getMe, googleCallbackHandler, facebookCallbackHandler } = require('../controllers/authController');
 const { protect } = require('../middleware/auth');
+const passport = require('../config/passport');
 
 /**
  * @route   POST /api/auth/register
@@ -68,5 +69,46 @@ router.post('/login', login);
     });
  */
 router.get('/me', protect, getMe);
+
+/**
+ * @route   GET /api/auth/google
+ * @desc    Initiate Google OAuth
+ * @access  Public
+ */
+router.get(
+  '/google',
+  passport.authenticate('google', {
+    scope: ['profile', 'email'],
+    session: false,
+  })
+);
+
+/**
+ * @route   GET /api/auth/google/callback
+ * @desc    Handle Google OAuth callback
+ * @access  Public
+ */
+router.get('/google/callback', passport.authenticate('google', { failureRedirect: '/login' }), googleCallbackHandler);
+
+/**
+ * @route   GET /api/auth/facebook
+ * @desc    Initiate Facebook OAuth
+ * @access  Public
+ */
+router.get(
+  '/facebook',
+  passport.authenticate('facebook', {
+    scope: ['public_profile'],
+    session: false,
+  })
+);
+
+/**
+ * @route   GET /api/auth/facebook/callback
+ * @desc    Handle Facebook OAuth callback
+ * @access  Public
+ */
+router.get('/facebook/callback', passport.authenticate('facebook', { failureRedirect: '/login' }), facebookCallbackHandler);
+
 
 module.exports = router;

@@ -6,11 +6,11 @@ const jwt = require('jsonwebtoken');
  * @param {number} userId - User ID
  * @returns {string} JWT token
  */
-const generateToken = (userId) => {
+const generateToken = (user) => {
   return jwt.sign(
-    { id: userId },
+    { id: user.id, email: user.email, role: user.role },
     process.env.JWT_SECRET || 'your-secret-key-change-this',
-    { expiresIn: '30d' }
+    { expiresIn: process.env.JWT_EXPIRE || '30d' }
   );
 };
 
