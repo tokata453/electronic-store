@@ -1,7 +1,33 @@
-import { ChevronRight, Menu } from "lucide-react";
+import { ChevronRight, Menu, Smartphone, HardDrive, Monitor, Printer, Wifi,Shield } from "lucide-react";
+
+const categories = [
+  {
+    name: "PC",
+    icon: Smartphone
+  },
+  {
+    name: "Hard Drive",
+    icon: HardDrive,
+  },
+  {
+    name: "Monitor",
+    icon: Monitor,
+  },
+  {
+    name: "Printer",
+    icon: Printer,
+  },
+  {
+    name: "Wifi",
+    icon: Wifi,
+  },
+  {
+    name: "Security",
+    icon: Shield,
+  },
+];
 
 export default function Navbar() {
-  const categories = Array.from({ length: 12 }); // placeholders
   return (
     <nav className="w-full bg-white px-6 py-4 flex items-center gap-12">
       {/* LEFT: Browse Category + Dropdown */}
@@ -26,39 +52,29 @@ export default function Navbar() {
           "
         >
           <ul className="p-3 space-y-2">
-            {categories.map((_, i) => (
-              <li
-                key={i}
-                className="
-                  flex items-center justify-between
-                  p-3 rounded-lg
-                  hover:bg-gray-200 cursor-pointer
-                  transition
-                "
-              >
-                <div className="flex items-center gap-4">
-                  {/* icon placeholder */}
-                  <div className="w-8 h-8 bg-gray-300 rounded-md" />
-                  {/* text placeholder */}
-                  <div className="w-40 h-4 bg-gray-300 rounded" />
-                </div>
+            {categories.map((category, i) => {
+              const Icon = category.icon;
 
-                <ChevronRight size={18} className="text-gray-500" />
-              </li>
-            ))}
+              return (
+                <li
+                  key={i}
+                  className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-200 cursor-pointer transition"
+                >
+                  <div className="flex items-center gap-4">
+                    
+                    {/* icon */}
+                    <Icon size={20} className="text-gray-600" />
 
-            {/* Bottom CTA placeholder */}
-            <li
-              className="
-                flex items-center justify-between
-                p-3 mt-2 rounded-lg
-                hover:bg-gray-200 cursor-pointer
-                font-semibold
-              "
-            >
-              <div className="w-44 h-4 bg-gray-400 rounded" />
-              <ChevronRight size={18} className="text-gray-600" />
-            </li>
+                    {/* text */}
+                    <span className="font-medium">
+                      {category.name}
+                    </span>
+                  </div>
+
+                  <ChevronRight size={18} className="text-gray-500" />
+                </li>
+              );
+            })}
           </ul>
         </div>
       </div>
