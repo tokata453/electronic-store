@@ -88,6 +88,23 @@ module.exports = (sequelize, DataTypes) => {
     address: {
       type: DataTypes.JSON,
       allowNull: true
+    },
+    googleId: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        unique: true,
+        comment: 'Google OAuth ID'
+      },
+    facebookId: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      unique: true,
+      comment: 'Facebook OAuth ID'
+    },
+    provider: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      comment: 'Authentication provider: local, google, facebook'
     }
   }, 
   {

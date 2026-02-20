@@ -2,6 +2,7 @@
 const { User } = require('../models');
 const generateToken = require('../utils/generateToken');
 const AppError = require('../utils/appError');
+const passport = require('../config/passport');
 
 /**
  * @desc    Register new user 
@@ -34,7 +35,7 @@ const register = async (req, res, next) => {
     });
 
     // Generate token
-    const token = generateToken(user.id);
+    const token = generateToken(user);
 
     res.status(201).json({
       success: true,
@@ -90,7 +91,7 @@ const login = async (req, res, next) => {
     }
 
     // Generate token
-    const token = generateToken(user.id);
+    const token = generateToken(user);
 
     res.status(200).json({
       success: true,
@@ -131,8 +132,52 @@ const getMe = async (req, res, next) => {
   }
 };
 
+const googleCallbackHandler = (req, res) => {
+  // This function will be called after successful Google authentication
+  // The user info will be in req.user
+  const token = generateToken(req.user);
+
+  res.status(200).json({
+    success: true,
+    data: {
+      user: {
+        id: req.user.id,
+        firstName: req.user.firstName,
+        lastName: req.user.lastName,
+        email: req.user.email,
+        phone: req.user.phone,
+        role: req.user.role
+      },
+      token
+    }
+  });
+};
+
+const facebookCallbackHandler = (req, res) => {
+  // This function will be called after successful Facebook authentication
+  // The user info will be in req.user
+  const token = generateToken(req.user);
+
+  res.status(200).json({
+    success: true,
+    data: {
+      user: {
+        id: req.user.id,
+        firstName: req.user.firstName,
+        lastName: req.user.lastName,
+        email: req.user.email,
+        phone: req.user.phone,
+        role: req.user.role
+      },
+      token
+    }
+  });
+};
+
 module.exports = {
   register,
   login,
-  getMe
+  getMe,
+  googleCallbackHandler,
+  facebookCallbackHandler
 };

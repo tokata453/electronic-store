@@ -7,16 +7,16 @@ module.exports = {
         name: 'Smartphones',
         slug: 'smartphones',
         description: 'Latest smartphones from top brands including iPhone, Samsung, Google Pixel, and more',
-        icon: '📱',
+        icon: 'Watch',
         isActive: true,
         sortOrder: 1,
         createdAt: new Date(),
         updatedAt: new Date()
       },
       {
-        name: 'Laptops',
-        slug: 'laptops',
-        description: 'High-performance laptops for work, gaming, and everyday use',
+        name: 'Computers',
+        slug: 'computers',
+        description: 'High-performance personal computers for work, gaming, and everyday use',
         icon: '💻',
         isActive: true,
         sortOrder: 2,
@@ -24,8 +24,8 @@ module.exports = {
         updatedAt: new Date()
       },
       {
-        name: 'Tablets',
-        slug: 'tablets',
+        name: 'iPad & Tablets',
+        slug: 'ipad-tablets',
         description: 'Portable tablets and iPads perfect for entertainment and productivity',
         icon: '📱',
         isActive: true,

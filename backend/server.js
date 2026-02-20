@@ -5,6 +5,8 @@ const cors = require("cors");
 const morgan = require("morgan");
 const db = require("./models");
 const path = require("path");
+const session = require("express-session");
+const passport = require("passport");
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -33,6 +35,23 @@ app.use(morgan("dev"));
 
 // Serve static files
 app.use(express.static(path.join(__dirname, "public")));
+
+// Session configuration
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || "supersecretkey",
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: process.env.NODE_ENV === "production", // Use secure cookies in production
+      maxAge: 1000 * 60 * 60 * 24, // 1 day
+    },
+  })
+);
+
+// Initialize Passport and restore authentication state, if any, from the session
+app.use(passport.initialize());
+app.use(passport.session());
 
 // ===============================================
 // Routes
