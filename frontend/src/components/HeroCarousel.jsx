@@ -55,7 +55,7 @@ const HeroCarousel = () => {
         <CarouselContent>
           {slides.map((slide) => (
             <CarouselItem key={slide.id}>
-              <div className="relative w-full h-150 overflow-hidden rounded-lg">
+              <div className="relative w-full h-160 overflow-hidden rounded-lg">
                 <img
                   src={slide.image}
                   alt={slide.title}
