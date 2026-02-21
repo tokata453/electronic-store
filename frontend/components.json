@@ -19,5 +19,7 @@
     "lib": "@/lib",
     "hooks": "@/hooks"
   },
-  "registries": {}
+  "registries": {
+    "@commercn": "https://commercn.com/r/{name}.json"
+  }
 }
