@@ -98,7 +98,7 @@ router.get('/google/callback', passport.authenticate('google', { failureRedirect
 router.get(
   '/facebook',
   passport.authenticate('facebook', {
-    scope: ['public_profile'],
+    scope: ['public_profile', 'email'],
     session: false,
   })
 );
