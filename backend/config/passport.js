@@ -94,7 +94,6 @@ passport.use(
       profileFields: ['id', 'emails', 'name', 'picture.type(large)'],
     },
     async (accessToken, refreshToken, profile, done) => {
-      console.log('Facebook profile:', profile);
       try {
         // Check if user exists with this Facebook ID
         let user = await User.findOne({ where: { facebookId: profile.id } });
