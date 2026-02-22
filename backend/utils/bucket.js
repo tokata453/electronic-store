@@ -3,8 +3,10 @@ const {
   S3Client,
   PutObjectCommand,
   DeleteObjectCommand,
+  PutObjectAclCommand,
 } = require('@aws-sdk/client-s3');
 const path = require('path');
+
 
 // Configure S3 client pointing to Railway Bucket
 const s3 = new S3Client({
@@ -42,6 +44,11 @@ const uploadFile = async (buffer, folder, mimetype, originalName) => {
       ContentType: mimetype,
     })
   );
+  await s3.send(new PutObjectAclCommand({
+    Bucket: BUCKET_NAME,
+    Key: key,
+    ACL: 'public-read',
+  }));
 
   // Public URL
   const url = `https://${process.env.BUCKET_HOST}/${BUCKET_NAME}/${key}`;

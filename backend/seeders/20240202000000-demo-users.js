@@ -5,14 +5,14 @@ module.exports = {
   up: async (queryInterface, Sequelize) => {
     // Hash password once for all users
     const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash('password123', salt);
+    const password = await bcrypt.hash('password123', salt);
 
     await queryInterface.bulkInsert('users', [
       {
         firstName: 'Admin',
         lastName: 'User',
         email: 'admin@iceelectronics.com',
-        password: hashedPassword,
+        password: password,
         phone: '+855123456789',
         role: 'admin',
         isActive: true,
@@ -30,7 +30,7 @@ module.exports = {
         firstName: 'Sokha',
         lastName: 'Chen',
         email: 'sokha@example.com',
-        password: hashedPassword,
+        password: password,
         phone: '+855987654321',
         role: 'customer',
         isActive: true,
@@ -47,8 +47,8 @@ module.exports = {
       {
         firstName: 'Dara',
         lastName: 'Sok',
-        email: 'dara@example.com',
-        password: hashedPassword,
+        email: 'dara123@gmail.com',
+        password: password,
         phone: '+855111222333',
         role: 'customer',
         isActive: true,
@@ -65,8 +65,8 @@ module.exports = {
       {
         firstName: 'Vanna',
         lastName: 'Kim',
-        email: 'vanna@example.com',
-        password: hashedPassword,
+        email: 'vanna123@gmail.com',
+        password: password,
         phone: '+855444555666',
         role: 'customer',
         isActive: true,
