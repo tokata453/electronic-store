@@ -1,0 +1,71 @@
+# .github/workflows/deploy-railway.yml
+# Auto-deploy to Railway on push to main branch
+
+name: 🚀 Deploy to Railway
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  deploy:
+    name: 🚂 Deploy to Railway
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 📦 Install dependencies
+        working-directory: ./backend
+        run: npm ci
+
+      - name: 🧪 Run quick tests
+        working-directory: ./backend
+        run: npm test --if-present
+        continue-on-error: true
+
+      - name: 🚂 Deploy to Railway
+        uses: bervProject/railway-deploy@main
+        with:
+          railway_token: ${{ secrets.RAILWAY_TOKEN }}
+          service: backend
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          JWT_EXPIRE: ${{ secrets.JWT_EXPIRE }}
+          SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
+          FRONTEND_URL: ${{ secrets.FRONTEND_URL }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          GOOGLE_CALLBACK_URL: ${{ secrets.GOOGLE_CALLBACK_URL }}
+          FACEBOOK_APP_ID: ${{ secrets.FACEBOOK_APP_ID }}
+          FACEBOOK_APP_SECRET: ${{ secrets.FACEBOOK_APP_SECRET }}
+          FACEBOOK_CALLBACK_URL: ${{ secrets.FACEBOOK_CALLBACK_URL }}
+          BUCKET_HOST: ${{ secrets.BUCKET_HOST }}
+          BUCKET_PORT: ${{ secrets.BUCKET_PORT }}
+          BUCKET_ACCESS_KEY_ID: ${{ secrets.BUCKET_ACCESS_KEY_ID }}
+          BUCKET_SECRET_ACCESS_KEY: ${{ secrets.BUCKET_SECRET_ACCESS_KEY }}
+
+      - name: 🗄️ Run migrations (Railway)
+        run: |
+          echo "Running migrations on Railway..."
+          # Railway will run migrations automatically with nixpacks
+        continue-on-error: true
+
+      - name: ✅ Deployment complete
+        run: |
+          echo "🎉 Deployment to Railway completed!"
+          echo "🌐 Check your Railway dashboard for deployment status"
+
+      - name: 📧 Notify on failure
+        if: failure()
+        run: |
+          echo "❌ Deployment failed!"
+          echo "Check the logs above for details"

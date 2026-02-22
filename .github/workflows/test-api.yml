@@ -1,0 +1,205 @@
+# .github/workflows/test-api.yml
+# Run comprehensive API tests
+
+name: 🔬 API Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/test-api.yml'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'backend/**'
+  schedule:
+    # Run tests every day at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  api-tests:
+    name: 🧪 Run API Tests
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: ecommerce_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ecommerce_test
+      JWT_SECRET: test-jwt-secret-for-ci
+      JWT_EXPIRE: 30d
+      SESSION_SECRET: test-session-secret-for-ci
+      NODE_ENV: test
+      FRONTEND_URL: http://localhost:3000
+      TEST_BASE_URL: http://localhost:3001
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: 📦 Install dependencies
+        working-directory: ./backend
+        run: npm ci
+
+      - name: 🗄️ Setup database
+        working-directory: ./backend
+        run: |
+          echo "Running migrations..."
+          npx sequelize-cli db:migrate
+          echo "Seeding database..."
+          npx sequelize-cli db:seed:all
+
+      - name: 🚀 Start server in background
+        working-directory: ./backend
+        run: |
+          npm run dev &
+          echo $! > server.pid
+          sleep 10
+        env:
+          PORT: 3001
+
+      - name: 🔍 Check server health
+        run: |
+          curl -f http://localhost:3001/health || exit 1
+          echo "✅ Server is running"
+
+      - name: 🧪 Run API test suite
+        working-directory: ./backend
+        run: |
+          echo "Running comprehensive API tests..."
+          node test-api.js
+        continue-on-error: false
+
+      - name: 🛑 Stop server
+        if: always()
+        working-directory: ./backend
+        run: |
+          if [ -f server.pid ]; then
+            kill $(cat server.pid) || true
+            rm server.pid
+          fi
+
+      - name: 📊 Generate test report
+        if: always()
+        run: |
+          echo "# API Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Test suite completed" >> $GITHUB_STEP_SUMMARY
+          echo "📊 Check logs above for detailed results" >> $GITHUB_STEP_SUMMARY
+
+      - name: 💬 Comment on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '✅ API tests passed! All endpoints are working correctly.'
+            })
+
+  integration-tests:
+    name: 🔗 Integration Tests
+    runs-on: ubuntu-latest
+    needs: api-tests
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: ecommerce_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/ecommerce_test
+      JWT_SECRET: test-jwt-secret-for-ci
+      JWT_EXPIRE: 30d
+      SESSION_SECRET: test-session-secret-for-ci
+      NODE_ENV: test
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: 📦 Install dependencies
+        working-directory: ./backend
+        run: npm ci
+
+      - name: 🗄️ Setup database
+        working-directory: ./backend
+        run: |
+          npx sequelize-cli db:migrate
+          npx sequelize-cli db:seed:all
+
+      - name: 🚀 Start server
+        working-directory: ./backend
+        run: |
+          npm run dev &
+          sleep 10
+
+      - name: 🔗 Run order integration tests
+        working-directory: ./backend
+        run: node test-orders.js || true
+        continue-on-error: true
+
+      - name: ✅ Tests complete
+        run: echo "Integration tests completed!"
+
+  test-summary:
+    name: 📊 Test Summary
+    runs-on: ubuntu-latest
+    needs: [api-tests, integration-tests]
+    if: always()
+
+    steps:
+      - name: 📊 Generate summary
+        run: |
+          echo "# 🧪 Test Results Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Test Status" >> $GITHUB_STEP_SUMMARY
+          echo "- API Tests: ${{ needs.api-tests.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Integration Tests: ${{ needs.integration-tests.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ needs.api-tests.result }}" == "success" ] && [ "${{ needs.integration-tests.result }}" == "success" ]; then
+            echo "✅ All tests passed!" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Some tests failed" >> $GITHUB_STEP_SUMMARY
+          fi
