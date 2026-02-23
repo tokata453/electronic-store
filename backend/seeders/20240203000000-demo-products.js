@@ -110,7 +110,9 @@ module.exports = {
         stock: 40,
         categoryId: 1,
         images: JSON.stringify([
-          '/images/products/oneplus-12-1.jpg'
+          "products/1771823653787-835196845.jpg",
+          "products/1771823653788-249468487.jpg",
+          "products/1771823653789-937846911.jpg"
         ]),
         badge: 'Hot',
         specifications: JSON.stringify({
