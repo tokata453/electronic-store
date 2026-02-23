@@ -2,6 +2,109 @@
 const { Product, Category } = require('../models');
 const { Op } = require('sequelize');
 const appError = require('../utils/appError');
+const {generatePresignedUrl} = require('../utils/bucket');
+
+// ═══════════════════════════════════════════════════════════
+// HELPER: Add presigned URLs to products
+// ═══════════════════════════════════════════════════════════
+
+/**
+ * Add presigned URLs to a single product
+ */
+const addPresignedUrls = async (product) => {
+  if (!product) return null;
+  
+  const productJson = product.toJSON ? product.toJSON() : product;
+  
+  // Generate presigned URLs for all image keys
+  if (productJson.images && Array.isArray(productJson.images)) {
+    try {
+      productJson.imageUrls = await Promise.all(
+        productJson.images.map(key => generatePresignedUrl(key))
+      );
+    } catch (error) {
+      console.error('Error generating presigned URLs:', error);
+      productJson.imageUrls = [];
+    }
+  } else {
+    productJson.imageUrls = [];
+  }
+  
+  // Also handle category image if it exists
+  if (productJson.category && productJson.category.image) {
+    try {
+      productJson.category.imageUrl = await generatePresignedUrl(productJson.category.image);
+    } catch (error) {
+      console.error('Error generating category image URL:', error);
+      productJson.category.imageUrl = null;
+    }
+  }
+  
+  return productJson;
+};
+
+/**
+ * Add presigned URLs to multiple products (efficiently)
+ */
+const addPresignedUrlsToMany = async (products) => {
+  if (!products || products.length === 0) return [];
+  
+  // Convert to JSON if needed
+  const productsJson = products.map(p => p.toJSON ? p.toJSON() : p);
+  
+  // Collect all unique keys that need URLs
+  const allKeys = new Set();
+  
+  productsJson.forEach(product => {
+    // Product images
+    if (product.images && Array.isArray(product.images)) {
+      product.images.forEach(key => allKeys.add(key));
+    }
+    
+    // Category image
+    if (product.category && product.category.image) {
+      allKeys.add(product.category.image);
+    }
+  });
+  
+  // Generate all URLs in parallel (much faster!)
+  const keyArray = Array.from(allKeys);
+  const urlPromises = keyArray.map(key => 
+    generatePresignedUrl(key).catch(err => {
+      console.error(`Error generating URL for ${key}:`, err);
+      return null;
+    })
+  );
+  
+  const urls = await Promise.all(urlPromises);
+  
+  // Create key -> URL map
+  const urlMap = {};
+  keyArray.forEach((key, index) => {
+    if (urls[index]) {
+      urlMap[key] = urls[index];
+    }
+  });
+  
+  // Add URLs to each product
+  productsJson.forEach(product => {
+    // Product images
+    if (product.images && Array.isArray(product.images)) {
+      product.imageUrls = product.images
+        .map(key => urlMap[key])
+        .filter(Boolean);
+    } else {
+      product.imageUrls = [];
+    }
+    
+    // Category image
+    if (product.category && product.category.image) {
+      product.category.imageUrl = urlMap[product.category.image] || null;
+    }
+  });
+  
+  return productsJson;
+};
 
 /**
  * @desc    Get all products with filtering, sorting, and pagination
@@ -74,10 +177,12 @@ const getProducts = async (req, res, next) => {
       offset: parseInt(offset)
     });
 
+    const productsWithUrls = await addPresignedUrlsToMany(products);
+
     res.status(200).json({
       success: true,
       data: {
-        products,
+        products: productsWithUrls,
         pagination: {
           total: count,
           page: parseInt(page),
@@ -88,7 +193,7 @@ const getProducts = async (req, res, next) => {
     });
 
   } catch (error) {
-    next(error);
+    return next(new appError('Error fetching products', 500));
   }
 };
 
@@ -116,15 +221,17 @@ const getProduct = async (req, res, next) => {
     // Increment views
     await product.increment('views');
 
+    const productWithUrls = await addPresignedUrls(product);
+
     res.status(200).json({
       success: true,
       data: {
-        product
+        product: productWithUrls
       }
     });
 
   } catch (error) {
-    next(error);
+    return next(new appError('Error fetching product', 500));
   }
 };
 
@@ -186,7 +293,7 @@ const createProduct = async (req, res, next) => {
     });
 
   } catch (error) {
-    next(error);
+    return next(new appError('Error creating product', 500));
   }
 };
 
@@ -206,15 +313,17 @@ const updateProduct = async (req, res, next) => {
     // Update product
     await product.update(req.body);
 
+    const productWithUrls = await addPresignedUrls(product);
+
     res.status(200).json({
       success: true,
       data: {
-        product
+        product: productWithUrls
       }
     });
 
   } catch (error) {
-    next(error);
+    return next(new appError('Error updating product', 500));
   }
 };
 
