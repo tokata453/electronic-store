@@ -99,6 +99,10 @@ const orderRoutes = require("./routes/orders");
 const userRoutes = require("./routes/users");
 const uploadRoutes = require('./routes/upload');
 const cartRoutes = require('./routes/cart');
+const adminRoutes = require('./routes/admin')
+
+const { protect } = require('./middleware/auth');
+const { admin } = require('./middleware/admin');
 
 // Use routes
 app.use("/api/auth", authRoutes);
@@ -108,6 +112,7 @@ app.use("/api/cart", cartRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/admin", protect, admin, adminRoutes)
 
 // ===============================================
 // Error Handling Middleware

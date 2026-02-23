@@ -123,12 +123,12 @@ const addToCart = async (req, res, next) => {
     const userId = req.user?.id;
     const sessionId = req.headers['x-session-id'] || req.body.sessionId;
 
-    if (!productId) return res.status(400).json({ success: false, error: { message: 'Product ID required' } });
-    if (quantity < 1) return res.status(400).json({ success: false, error: { message: 'Quantity must be at least 1' } });
+    if (!productId) return next(new AppError("Product ID required", 400))
+    if (quantity < 1) return next(new AppError("Quantity must be at least 1", 400))
 
     const product = await Product.findByPk(productId);
-    if (!product) return res.status(404).json({ success: false, error: { message: 'Product not found' } });
-    if (!product.isActive) return res.status(400).json({ success: false, error: { message: 'Product not available' } });
+    if (!product) return next(new AppError('Product not foudnd', 404))
+    if (!product.isActive) return next(new AppError('Product not available', 400))
     if (product.stock < quantity) {
       return res.status(400).json({ success: false, error: { message: 'Insufficient stock', availableStock: product.stock } });
     }
@@ -139,7 +139,8 @@ const addToCart = async (req, res, next) => {
 
     if (cartItem) {
       const newQuantity = cartItem.quantity + quantity;
-      if (product.stock < newQuantity) {
+      if (product.stock < newQuantity)
+        {
         return res.status(400).json({ 
           success: false, 
           error: { message: 'Insufficient stock', availableStock: product.stock, currentQuantity: cartItem.quantity } 
@@ -176,9 +177,7 @@ const updateCartItem = async (req, res, next) => {
     const userId = req.user?.id;
     const sessionId = req.headers['x-session-id'];
 
-    if (!quantity || quantity < 1) {
-      return res.status(400).json({ success: false, error: { message: 'Quantity must be at least 1' } });
-    }
+    if (!quantity || quantity < 1) return next(new AppError('Quantity must be at least 1', 400))
 
     const cartItem = await CartItem.findByPk(itemId, {
       include: [
@@ -187,7 +186,7 @@ const updateCartItem = async (req, res, next) => {
       ]
     });
 
-    if (!cartItem) return res.status(404).json({ success: false, error: { message: 'Cart item not found' } });
+    if (!cartItem) return next(new AppError('Cart item not found', 404))
     if (cartItem.product.stock < quantity) {
       return res.status(400).json({ success: false, error: { message: 'Insufficient stock', availableStock: cartItem.product.stock } });
     }

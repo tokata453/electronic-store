@@ -7,7 +7,7 @@
     "dev": "nodemon server.js",
     "test": "node tests/test-api.js",
     "db:migrate": "node utils/migrate-model.js",
-    "db:reset": "node utils/reset-model.js dotenv -e .env -- npx sequelize-cli db:seed:all",
+    "db:reset": "node utils/reset-model.js",
     "seed": "dotenv -e .env -- npx sequelize-cli db:seed:all",
     "seed:undo": "dotenv -e .env -- npx sequelize-cli db:seed:undo:all"
   },
