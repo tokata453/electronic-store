@@ -1,6 +1,64 @@
 // controllers/categoryController.js
 const { Category, Product } = require('../models');
 const AppError = require('../utils/appError');
+const { generatePresignedUrl } = require('../utils/bucket');
+
+const addPresignedUrlToCategories = async (categories) => {
+  if (!categories || categories.length === 0) return [];
+
+  const categoriesJson = categories.map(c => c.toJSON ? c.toJSON() : c);
+
+  return await Promise.all(categoriesJson.map(async (category) => {
+    if (category.image) {
+      try {
+        category.imageUrl = await generatePresignedUrl(category.image);
+      } catch (error) {
+        console.error('Error generating category image URL:', error);
+        category.imageUrl = null;
+      }
+    } else {
+      category.imageUrl = null;
+    }
+    return category;
+  }));
+};
+
+const addPresignedUrlToCategory = async (category) => {
+  if (!category) return null;
+
+  const categoryJson = category.toJSON ? category.toJSON() : category;
+
+  if (categoryJson.image) {
+    try {
+      categoryJson.imageUrl = await generatePresignedUrl(categoryJson.image);
+    } catch (error) {
+      console.error('Error generating category image URL:', error);
+      categoryJson.imageUrl = null;
+    }
+  } else {
+    categoryJson.imageUrl = null;
+  }
+
+  if(categoryJson.products && Array.isArray(categoryJson.products)) {
+    categoryJson.products = await Promise.all(categoryJson.products.map(async (product) => {
+      if (product.images && Array.isArray(product.images)) {
+        try {
+          product.imageUrls = await Promise.all(
+            product.images.map(key => generatePresignedUrl(key))
+          );
+        } catch (error) {
+          console.error('Error generating product image URLs:', error);
+          product.imageUrls = [];
+        }
+      } else {
+        product.imageUrls = [];
+      }
+      return product;
+    }));
+  }
+
+  return categoryJson;
+};
 
 /**
  * @desc    Get all categories
@@ -15,10 +73,12 @@ const getCategories = async (req, res, next) => {
       attributes: ['id', 'name', 'slug', 'description', 'icon', 'image', 'sortOrder']
     });
 
+    const categoriesWithUrls = await addPresignedUrlToCategories(categories);
+
     res.status(200).json({
       success: true,
       data: {
-        categories
+        categories: categoriesWithUrls
       }
     });
 
@@ -53,10 +113,12 @@ const getCategory = async (req, res, next) => {
       return next(new AppError('Category not found', 404));
     }
 
+    const categoryWithUrls = await addPresignedUrlToCategory(category);
+
     res.status(200).json({
       success: true,
       data: {
-        category
+        category: categoryWithUrls
       }
     });
 

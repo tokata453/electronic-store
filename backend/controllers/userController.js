@@ -2,6 +2,47 @@
 const { User } = require('../models');
 const bcrypt = require('bcryptjs');
 const AppError = require('../utils/appError');
+const { generatePresignedUrl } = require('../utils/bucket');
+
+const addPresignedUrlToUser = async (user) => {
+  if (!user) return null;
+
+  const userJson = user.toJSON ? user.toJSON() : user;
+
+  // Generate presigned URL for avatar if it exists
+  if (userJson.avatar) {
+    try {
+      userJson.avatarUrl = await generatePresignedUrl(userJson.avatar);
+    } catch (error) {
+      console.error('Error generating avatar URL:', error);
+      userJson.avatarUrl = null;
+    }
+  } else {
+    userJson.avatarUrl = null;
+  }
+
+  return userJson;
+};
+
+const addPresignedUrlToUsers = async (users) => {
+  if (!users || users.length === 0) return [];
+
+  const usersJson = users.map(u => u.toJSON ? u.toJSON() : u);
+
+  return await Promise.all(usersJson.map(async (user) => {
+    if (user.avatar) {
+      try {
+        user.avatarUrl = await generatePresignedUrl(user.avatar);
+      } catch (error) {
+        console.error('Error generating avatar URL for user ID', user.id, error);
+        user.avatarUrl = null;
+      }
+    } else {
+      user.avatarUrl = null;
+    }
+    return user;
+  }));
+};
 
 /**
  * @desc    Get user profile
@@ -15,10 +56,12 @@ const getProfile = async (req, res, next) => {
       attributes: { exclude: ['password'] }
     });
 
+    const userWithUrls = await addPresignedUrlToUser(user);
+
     res.status(200).json({
       success: true,
       data: {
-        user
+        user: userWithUrls
       }
     });
 
@@ -131,10 +174,12 @@ const getUsers = async (req, res, next) => {
       attributes: { exclude: ['password'] }
     });
 
+    const usersWithUrls = await addPresignedUrlToUsers(users);
+
     res.status(200).json({
       success: true,
       data: {
-        users
+        users: usersWithUrls
       }
     });
 
@@ -158,10 +203,12 @@ const getUserById = async (req, res, next) => {
       return next(new AppError('User not found', 404));
     }
 
+    const userWithUrls = await addPresignedUrlToUser(user);
+
     res.status(200).json({
       success: true,
       data: {
-        user
+        user: userWithUrls
       }
     });
 

@@ -1,5 +1,5 @@
 // controllers/uploadController.js
-const { uploadFile, deleteFile, keyFromUrl } = require('../utils/bucket');
+const { uploadFile, deleteFile, keyFromUrl, refreshUrl } = require('../utils/bucket');
 const { Product, Category, User } = require('../models');
 const appError = require('../utils/appError');
 
@@ -18,88 +18,91 @@ const appError = require('../utils/appError');
  */
 const uploadProductImages = async (req, res, next) => {
   try {
+    const { productId } = req.params;
+
     if (!req.files || req.files.length === 0) {
-        return next(new appError('Please upload at least one image', 400));
+      return next(new appError('Please upload at least one image', 400));
     }
 
-    // 2. Find product
-    const product = await Product.findByPk(req.params.productId);
+    const product = await Product.findByPk(productId);
     if (!product) {
       return next(new appError('Product not found', 404));
     }
 
-    // 3. Upload all images to bucket in parallel
-    const uploadPromises = req.files.map((file) =>
+    // Upload all files and get presigned URLs
+    const uploadPromises = req.files.map(file => 
       uploadFile(file.buffer, 'products', file.mimetype, file.originalname)
     );
-    const results = await Promise.all(uploadPromises);
+    const uploadResults = await Promise.all(uploadPromises);
 
-    // 4. Merge with existing images (keep old + add new)
-    const existingImages = product.images || [];
-    const newUrls = results.map((r) => r.url);
-    const allImages = [...existingImages, ...newUrls];
+    // Store the KEYS (not presigned URLs) in database
+    const keys = uploadResults.map(r => r.key);
+    const presignedUrls = uploadResults.map(r => r.url);
 
-    // 5. Save to database
-    await product.update({ images: allImages });
+    // Update product images (store keys)
+    const currentImages = product.images || [];
+    const updatedImages = [...currentImages, ...keys];
+    product.images = updatedImages;
+    await product.save();
 
     res.status(200).json({
       success: true,
       data: {
-        message: `${req.files.length} image(s) uploaded successfully`,
-        uploadedUrls: newUrls,
-        allImages,
-        product: {
-          id: product.id,
-          name: product.name,
-          images: allImages,
-        },
-      },
+        message: `${keys.length} image(s) uploaded successfully`,
+        uploadedUrls: presignedUrls, // Return presigned URLs to client
+        keys: keys, // Also return keys
+        allImages: updatedImages, // All keys
+        product
+      }
     });
-  } catch (error) {
-    next(error);
+  } 
+  catch (error) {
+    return next(error);
   }
-};
+}
+
 
 /**
  * @desc    Delete a specific product image
  * @route   DELETE /api/upload/product/:productId/image
  * @access  Private/Admin
  *
- * Body: { "imageUrl": "https://bucket.railway.app/.../products/xxx.jpg" }
+ * Body: { imageKey: 'products/123456789.jpg' }
  */
 const deleteProductImage = async (req, res, next) => {
-  try {
-    const { imageUrl } = req.body;
+try {
+    const { productId } = req.params;
+    const { imageKey } = req.body; // Expecting key, not URL
 
-    if (!imageUrl) {
-      return next(new appError('imageUrl is required in request body', 400));
+    if (!imageKey) {
+      return next(appError('Image key is required', 400));
     }
 
-    // 1. Find product
-    const product = await Product.findByPk(req.params.productId);
+    const product = await Product.findByPk(productId);
     if (!product) {
-      return next(new appError('Product not found', 404));
+      return next(appError('Product not found', 404));
     }
 
-    // 2. Remove from bucket
-    const key = keyFromUrl(imageUrl);
-    if (key) await deleteFile(key);
+    // Delete from Railway Bucket
+    await deleteFile(imageKey);
 
-    // 3. Remove URL from product.images array
-    const updatedImages = (product.images || []).filter((url) => url !== imageUrl);
-    await product.update({ images: updatedImages });
+    // Remove from product images array
+    const updatedImages = product.images.filter(key => key !== imageKey);
+    product.images = updatedImages;
+    await product.save();
 
     res.status(200).json({
       success: true,
       data: {
         message: 'Image deleted successfully',
-        remainingImages: updatedImages,
-      },
+        remainingImages: updatedImages
+      }
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 };
+
 
 // ─────────────────────────────────────────────
 // 📁 CATEGORY IMAGE
@@ -116,48 +119,46 @@ const deleteProductImage = async (req, res, next) => {
  */
 const uploadCategoryImage = async (req, res, next) => {
   try {
-    if (!req.file) {
-      return next(appError('Please upload an image', 400));
+      const { categoryId } = req.params;
+
+      if (!req.file) {
+        return next(appError('Please upload an image', 400));
+      }
+
+      const category = await Category.findByPk(categoryId);
+      if (!category) {
+        return next(appError('Category not found', 404));
+      }
+
+      // Delete old image if exists
+      if (category.image) {
+        await deleteFile(category.image);
+      }
+
+      // Upload new image
+      const { url: presignedUrl, key } = await uploadFile(
+        req.file.buffer,
+        'categories',
+        req.file.mimetype,
+        req.file.originalname
+      );
+
+      // Store KEY in database
+      category.image = key;
+      await category.save();
+
+      res.status(200).json({
+        success: true,
+        data: {
+          message: 'Category image uploaded successfully',
+          imageUrl: presignedUrl, // Return presigned URL
+          imageKey: key,
+          category
+        }
+      });
+    } catch (error) {
+      return next(error);
     }
-
-    // 2. Find category
-    const category = await Category.findByPk(req.params.categoryId);
-    if (!category) {
-      return next(appError('Category not found', 404));
-    }
-
-    // 3. Delete old image from bucket (if exists)
-    if (category.image) {
-      const oldKey = keyFromUrl(category.image);
-      if (oldKey) await deleteFile(oldKey);
-    }
-
-    // 4. Upload new image
-    const { url } = await uploadFile(
-      req.file.buffer,
-      'categories',
-      req.file.mimetype,
-      req.file.originalname
-    );
-
-    // 5. Save to database
-    await category.update({ image: url });
-
-    res.status(200).json({
-      success: true,
-      data: {
-        message: 'Category image uploaded successfully',
-        imageUrl: url,
-        category: {
-          id: category.id,
-          name: category.name,
-          image: url,
-        },
-      },
-    });
-  } catch (error) {
-    next(error);
-  }
 };
 
 // ─────────────────────────────────────────────
@@ -175,51 +176,55 @@ const uploadCategoryImage = async (req, res, next) => {
  */
 const uploadAvatar = async (req, res, next) => {
   try {
-    if (!req.file) {
-      return next(appError('Please upload an image', 400));
+      if (!req.file) {
+        return next(appError('Please upload an image', 400));
+      }
+
+      const user = await User.findByPk(req.user.id);
+      if (!user) {
+        return next(appError('User not found', 404));
+      }
+      
+
+      // Delete old avatar if exists
+      if (user.avatar) {
+        await deleteFile(user.avatar);
+      }
+
+      // Upload new avatar
+      const { url: presignedUrl, key } = await uploadFile(
+        req.file.buffer,
+        'avatars',
+        req.file.mimetype,
+        req.file.originalname
+      );
+
+      // Store KEY in database
+      user.avatar = key;
+      await user.save();
+
+      res.status(200).json({
+        success: true,
+        data: {
+          message: 'Avatar uploaded successfully',
+          avatarUrl: presignedUrl, // Return presigned URL
+          avatarKey: key,
+          user: {
+            id: user.id,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            email: user.email,
+            avatar: user.avatar
+          }
+        }
+      });
+    } catch (error) {
+      return next(error);
     }
-
-    // 2. Find user (from protect middleware)
-    const user = await User.findByPk(req.user.id);
-    if (!user) {
-      return next(appError('User not found', 404));
-    }
-
-    // 3. Delete old avatar from bucket (if exists)
-    if (user.avatar) {
-      const oldKey = keyFromUrl(user.avatar);
-      if (oldKey) await deleteFile(oldKey);
-    }
-
-    // 4. Upload new avatar
-    const { url } = await uploadFile(
-      req.file.buffer,
-      'avatars',
-      req.file.mimetype,
-      req.file.originalname
-    );
-
-    // 5. Save to database
-    await user.update({ avatar: url });
-
-    res.status(200).json({
-      success: true,
-      data: {
-        message: 'Avatar uploaded successfully',
-        avatarUrl: url,
-        user: {
-          id: user.id,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          email: user.email,
-          avatar: url,
-        },
-      },
-    });
-  } catch (error) {
-    next(error);
   }
-};
+  
+
+
 
 module.exports = {
   uploadProductImages,
