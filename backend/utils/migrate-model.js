@@ -30,22 +30,10 @@ async function checkModels() {
     
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
     
-    // Check what we need
-    const requiredModels = ['User', 'Category', 'Product', 'Order', 'OrderItem'];
-    const missingModels = requiredModels.filter(model => !modelNames.includes(model));
-    
-    if (missingModels.length > 0) {
-      console.log('⚠️  Missing models:');
-      missingModels.forEach(model => console.log(`   - ${model}.js`));
-      console.log('\n💡 You need to copy these files to backend/models/\n');
-    } else {
-      console.log('✅ All required models are present!\n');
-    }
-    
     // Try to sync models to database
     console.log('🔄 Attempting to create tables in database...\n');
     
-    await db.sequelize.sync({ force: true});
+    await db.sequelize.sync({ force: false, alter: true });
     
     console.log('✅ Database tables created/updated successfully!\n');
     
