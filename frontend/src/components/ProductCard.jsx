@@ -11,9 +11,8 @@ import { Button } from "@/components/ui/button";
 export function ProductCard({ product }) {
     // Safely grab the first image and handle your relative/absolute URL logic
     const firstImage = product?.images?.[0] || 'placeholder.png';
-    const imageUrl = firstImage.startsWith('http')
-        ? firstImage
-        : `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'}${firstImage}`;
+    const imageUrl = product?.imageUrls?.[0] || firstImage; // Try presigned URL first, fallback to key
+  
 
     // Ensure prices are formatted to 2 decimal places so "899.99" renders correctly
     const price = parseFloat(product?.price || 0).toFixed(2);
