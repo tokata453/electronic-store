@@ -16,7 +16,7 @@ module.exports = {
         phone: '+855123456789',
         role: 'admin',
         isActive: true,
-        avatar: null,
+        avatar: 'avatars/1771822942467-96568936.jpg',
         address: JSON.stringify({
           street: '123 Tech Plaza',
           city: 'Phnom Penh',
@@ -34,7 +34,7 @@ module.exports = {
         phone: '+855987654321',
         role: 'customer',
         isActive: true,
-        avatar: null,
+        avatar: 'avatars/1771823100435-431396219.jpg',
         address: JSON.stringify({
           street: '456 Street 51',
           city: 'Phnom Penh',
@@ -52,7 +52,7 @@ module.exports = {
         phone: '+855111222333',
         role: 'customer',
         isActive: true,
-        avatar: null,
+        avatar: 'avatars/1771823197965-391678535.jpg',
         address: JSON.stringify({
           street: '789 Monivong Blvd',
           city: 'Phnom Penh',
@@ -70,7 +70,7 @@ module.exports = {
         phone: '+855444555666',
         role: 'customer',
         isActive: true,
-        avatar: null,
+        avatar: 'avatars/1771823289676-663418362.jpg',
         address: JSON.stringify({
           street: '321 Riverside Road',
           city: 'Siem Reap',
@@ -87,8 +87,8 @@ module.exports = {
     console.log('📧 Login Credentials:');
     console.log('   Admin:    admin@iceelectronics.com / password123');
     console.log('   Customer: sokha@example.com / password123');
-    console.log('   Customer: dara@example.com / password123');
-    console.log('   Customer: vanna@example.com / password123');
+    console.log('   Customer: dara123@gmail.com / password123');
+    console.log('   Customer: vanna123@gmail.com / password123');
   },
 
   down: async (queryInterface, Sequelize) => {

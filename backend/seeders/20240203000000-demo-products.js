@@ -14,9 +14,9 @@ module.exports = {
         stock: 45,
         categoryId: 1,
         images: JSON.stringify([
-          '/images/products/iphone-15-pro-1.jpg',
-          '/images/products/iphone-15-pro-2.jpg',
-          '/images/products/iphone-15-pro-3.jpg'
+          "products/1771823653787-835196845.jpg",
+          "products/1771823653788-249468487.jpg",
+          "products/1771823653789-937846911.jpg"
         ]),
         badge: 'Hot',
         specifications: JSON.stringify({
@@ -46,8 +46,9 @@ module.exports = {
         stock: 32,
         categoryId: 1,
         images: JSON.stringify([
-          '/images/products/galaxy-s24-ultra-1.jpg',
-          '/images/products/galaxy-s24-ultra-2.jpg'
+          "products/1771823765095-889899532.jpg",
+          "products/1771823765100-897889707.jpg",
+          "products/1771823765100-913397543.jpg"
         ]),
         badge: 'New',
         specifications: JSON.stringify({
@@ -77,8 +78,9 @@ module.exports = {
         stock: 28,
         categoryId: 1,
         images: JSON.stringify([
-          '/images/products/pixel-8-pro-1.jpg',
-          '/images/products/pixel-8-pro-2.jpg'
+          "products/1771823765095-889899532.jpg",
+          "products/1771823765100-897889707.jpg",
+          "products/1771823765100-913397543.jpg"
         ]),
         badge: 'Sale',
         specifications: JSON.stringify({
@@ -140,8 +142,9 @@ module.exports = {
         stock: 18,
         categoryId: 2,
         images: JSON.stringify([
-          '/images/products/macbook-pro-16-1.jpg',
-          '/images/products/macbook-pro-16-2.jpg'
+          "products/1771823765095-889899532.jpg",
+          "products/1771823765100-897889707.jpg",
+          "products/1771823765100-913397543.jpg"
         ]),
         badge: 'Featured',
         specifications: JSON.stringify({
@@ -171,8 +174,9 @@ module.exports = {
         stock: 22,
         categoryId: 2,
         images: JSON.stringify([
-          '/images/products/dell-xps-15-1.jpg',
-          '/images/products/dell-xps-15-2.jpg'
+          "products/1771823765095-889899532.jpg",
+          "products/1771823765100-897889707.jpg",
+          "products/1771823765100-913397543.jpg"
         ]),
         badge: 'New',
         specifications: JSON.stringify({
@@ -202,7 +206,9 @@ module.exports = {
         stock: 15,
         categoryId: 2,
         images: JSON.stringify([
-          '/images/products/asus-g14-1.jpg'
+          "products/1771823765095-889899532.jpg",
+          "products/1771823765100-897889707.jpg",
+          "products/1771823765100-913397543.jpg"
         ]),
         badge: 'Sale',
         specifications: JSON.stringify({
@@ -232,8 +238,9 @@ module.exports = {
         stock: 20,
         categoryId: 2,
         images: JSON.stringify([
-          '/images/products/thinkpad-x1-1.jpg',
-          '/images/products/thinkpad-x1-2.jpg'
+          "products/1771823765095-889899532.jpg",
+          "products/1771823765100-897889707.jpg",
+          "products/1771823765100-913397543.jpg"
         ]),
         badge: null,
         specifications: JSON.stringify({
@@ -265,8 +272,9 @@ module.exports = {
         stock: 35,
         categoryId: 3,
         images: JSON.stringify([
-          '/images/products/ipad-pro-129-1.jpg',
-          '/images/products/ipad-pro-129-2.jpg'
+          "products/1771823765095-889899532.jpg",
+          "products/1771823765100-897889707.jpg",
+          "products/1771823765100-913397543.jpg"
         ]),
         badge: 'Sale',
         specifications: JSON.stringify({
@@ -296,7 +304,9 @@ module.exports = {
         stock: 18,
         categoryId: 3,
         images: JSON.stringify([
-          '/images/products/galaxy-tab-s9-1.jpg'
+          "products/1771823765095-889899532.jpg",
+          "products/1771823765100-897889707.jpg",
+          "products/1771823765100-913397543.jpg"
         ]),
         badge: 'New',
         specifications: JSON.stringify({
@@ -326,8 +336,9 @@ module.exports = {
         stock: 25,
         categoryId: 3,
         images: JSON.stringify([
-          '/images/products/surface-pro-9-1.jpg',
-          '/images/products/surface-pro-9-2.jpg'
+          "products/1771823765095-889899532.jpg",
+          "products/1771823765100-897889707.jpg",
+          "products/1771823765100-913397543.jpg"
         ]),
         badge: 'Hot',
         specifications: JSON.stringify({
@@ -358,7 +369,9 @@ module.exports = {
         stock: 120,
         categoryId: 4,
         images: JSON.stringify([
-          '/images/products/airpods-pro-2-1.jpg'
+          "products/1771823765095-889899532.jpg",
+          "products/1771823765100-897889707.jpg",
+          "products/1771823765100-913397543.jpg"
         ]),
         badge: 'Hot',
         specifications: JSON.stringify({
@@ -387,8 +400,9 @@ module.exports = {
         stock: 45,
         categoryId: 4,
         images: JSON.stringify([
-          '/images/products/sony-wh1000xm5-1.jpg',
-          '/images/products/sony-wh1000xm5-2.jpg'
+          "products/1771823765095-889899532.jpg",
+          "products/1771823765100-897889707.jpg",
+          "products/1771823765100-913397543.jpg"
         ]),
         badge: 'Sale',
         specifications: JSON.stringify({
@@ -416,7 +430,9 @@ module.exports = {
         stock: 55,
         categoryId: 4,
         images: JSON.stringify([
-          '/images/products/bose-qc-ultra-1.jpg'
+          "products/1771823765095-889899532.jpg",
+          "products/1771823765100-897889707.jpg",
+          "products/1771823765100-913397543.jpg"
         ]),
         badge: 'New',
         specifications: JSON.stringify({
@@ -447,8 +463,9 @@ module.exports = {
         stock: 70,
         categoryId: 5,
         images: JSON.stringify([
-          '/images/products/apple-watch-9-1.jpg',
-          '/images/products/apple-watch-9-2.jpg'
+          "products/1771823765095-889899532.jpg",
+          "products/1771823765100-897889707.jpg",
+          "products/1771823765100-913397543.jpg"
         ]),
         badge: 'Sale',
         specifications: JSON.stringify({
@@ -477,7 +494,9 @@ module.exports = {
         stock: 40,
         categoryId: 5,
         images: JSON.stringify([
-          '/images/products/galaxy-watch-6-1.jpg'
+          "products/1771823765095-889899532.jpg",
+          "products/1771823765100-897889707.jpg",
+          "products/1771823765100-913397543.jpg"
         ]),
         badge: null,
         specifications: JSON.stringify({
@@ -506,8 +525,9 @@ module.exports = {
         stock: 15,
         categoryId: 5,
         images: JSON.stringify([
-          '/images/products/garmin-fenix-7x-1.jpg',
-          '/images/products/garmin-fenix-7x-2.jpg'
+          "products/1771823765095-889899532.jpg",
+          "products/1771823765100-897889707.jpg",
+          "products/1771823765100-913397543.jpg"
         ]),
         badge: 'Featured',
         specifications: JSON.stringify({
@@ -538,7 +558,9 @@ module.exports = {
         stock: 85,
         categoryId: 6,
         images: JSON.stringify([
-          '/images/products/anker-737-1.jpg'
+          "products/1771823765095-889899532.jpg",
+          "products/1771823765100-897889707.jpg",
+          "products/1771823765100-913397543.jpg"
         ]),
         badge: 'Hot',
         specifications: JSON.stringify({
@@ -566,7 +588,9 @@ module.exports = {
         stock: 200,
         categoryId: 6,
         images: JSON.stringify([
-          '/images/products/magsafe-charger-1.jpg'
+          "products/1771823765095-889899532.jpg",
+          "products/1771823765100-897889707.jpg",
+          "products/1771823765100-913397543.jpg"
         ]),
         badge: null,
         specifications: JSON.stringify({
