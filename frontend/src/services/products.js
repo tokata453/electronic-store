@@ -1,4 +1,4 @@
-const BASE_URL = import.meta.env.VITE_API_BASE_URL
+const BASE_URL = 'https://electronic-store-production-0f93.up.railway.app'
 
 
 export const getProducts = async (params = {}) => {
