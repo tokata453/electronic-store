@@ -28,7 +28,7 @@ jobs:
         run: |
           ssh -o StrictHostKeyChecking=no $USER@$HOST << 'EOF'
             set -e
-            cd /electronic-store/backend
+            cd electronic-store/backend
             git pull origin main
             npm ci --omit=dev
             pm2 reload backend
