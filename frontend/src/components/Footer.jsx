@@ -1,4 +1,4 @@
-const Footer = () => {
+export default function Footer () {
   return (
     <footer className="bg-gray-900 text-white py-8">
       <div className="max-w-5xl mx-auto flex flex-col md:flex-row justify-between items-center px-6">
@@ -32,5 +32,3 @@ const Footer = () => {
     </footer>
   );
 };
-
-export default Footer;

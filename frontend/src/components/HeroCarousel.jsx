@@ -35,7 +35,7 @@ const slides = [
   },
 ]
 
-const HeroCarousel = () => {
+export default function HeroCarousel () {
   // Autoscroll for images
   const plugin = React.useRef(
     Autoplay({ delay: 4000, stopOnInteraction: true }) // time between each image
@@ -79,5 +79,3 @@ const HeroCarousel = () => {
     </div>
   )
 }
-
-export default HeroCarousel
