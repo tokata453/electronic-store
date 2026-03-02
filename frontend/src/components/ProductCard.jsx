@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
-export function ProductCard({ product }) {
+export default function ProductCard({ product }) {
     // Safely grab the first image and handle your relative/absolute URL logic
     const firstImage = product?.images?.[0] || 'placeholder.png';
     const imageUrl = product?.imageUrls?.[0] || firstImage; // Try presigned URL first, fallback to key

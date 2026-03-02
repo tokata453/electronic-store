@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { getProducts } from "@/services/products";
-import { ProductCard } from "./ProductCard";
+import  ProductCard  from "./ProductCard";
 
-export function OnSaleSection() {
+export default function OnSaleProducts() {
     const [products, setProducts] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
