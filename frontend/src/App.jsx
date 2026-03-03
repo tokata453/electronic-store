@@ -22,10 +22,10 @@ const router = createBrowserRouter([
         path: "register", // Loads at "/register"
         element: <Register />,
       },
-      {
-        path: "category/:categoryName",
-        element: <CategoryPage />,
-      }
+      // {
+      //   path: "category/:categoryName",
+      //   element: <CategoryPage />,
+      // }
     ],
   },
 ]);
