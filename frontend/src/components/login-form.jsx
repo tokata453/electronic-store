@@ -47,7 +47,8 @@ export default function LoginForm({
         // Save the token/user data and redirect to the home page
         localStorage.setItem("token", result.data.token);
         localStorage.setItem("user", JSON.stringify(result.data.user));
-        navigate("/");
+        if (result.data.user.role === "admin") navigate("/admin/products");
+        else navigate("/");
       } else {
         setError(result.message || "Invalid email or password.");
       }
