@@ -1,16 +1,16 @@
 import React from "react";
 
 const brands = [
-  { name: "HP", logo: "https://upload.wikimedia.org/wikipedia/commons/2/29/HP_New_Logo_2D.svg" },
+  { name: "HP", logo: "https://upload.wikimedia.org/wikipedia/commons/0/05/HP_logo_2025.svg" },
   { name: "Dell", logo: "https://upload.wikimedia.org/wikipedia/commons/4/48/Dell_Logo.svg" },
   { name: "Lenovo", logo: "https://upload.wikimedia.org/wikipedia/commons/b/b8/Lenovo_logo_2015.svg" },
   { name: "Asus", logo: "https://upload.wikimedia.org/wikipedia/commons/2/2e/ASUS_Logo.svg" },
-  { name: "Samsung", logo: "https://upload.wikimedia.org/wikipedia/commons/2/24/Samsung_Logo.svg" },
+  { name: "Samsung", logo: "https://upload.wikimedia.org/wikipedia/commons/b/b7/Samsung_Black_icon.svg" },
   { name: "Apple", logo: "https://upload.wikimedia.org/wikipedia/commons/f/fa/Apple_logo_black.svg" },
   { name: "Logitech", logo: "https://upload.wikimedia.org/wikipedia/commons/1/17/Logitech_logo.svg" },
-  { name: "Razer", logo: "https://upload.wikimedia.org/wikipedia/en/4/40/Razer_Inc._logo.svg" },
+  { name: "Razer", logo: "https://upload.wikimedia.org/wikipedia/commons/5/52/Razer_wordmark.svg" },
   { name: "Sony", logo: "https://upload.wikimedia.org/wikipedia/commons/c/ca/Sony_logo.svg" },
-  { name: "MSI", logo: "https://upload.wikimedia.org/wikipedia/commons/f/f3/MSI_Logo_2019.svg" },
+  { name: "MSI", logo: "https://upload.wikimedia.org/wikipedia/commons/9/91/Micro-Star_International_logo.svg" },
 ];
 export default function Marquee() {
   return (
