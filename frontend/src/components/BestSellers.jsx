@@ -12,7 +12,7 @@ export default function BestSellers() {
             try {
                 // Fetch only 6 Hot products
                 const data = await getProducts({ badge: 'Hot', limit: 6 });
-                setProducts(data);
+                setProducts(data.products);
             } catch (err) {
                 setError(err.message);
             } finally {

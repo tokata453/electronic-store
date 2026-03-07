@@ -1,19 +1,11 @@
-const BASE_URL = 'https://electronic-store-production-0f93.up.railway.app'
-
+import api from './api';
 
 export const getProducts = async (params = {}) => {
     try {
-        // Add parameters in the main component files instead
-        const queryString = new URLSearchParams(params).toString();
-        const url = `${BASE_URL}/api/products${queryString ? `?${queryString}` : ''}`;
+        // Axios automatically converts the params object into a query string!
+        const response = await api.get('/api/products', { params });
         
-        const response = await fetch(url);
-        
-        if (!response.ok) {
-            throw new Error(`Error: ${response.status} ${response.statusText}`);
-        }
-        const json = await response.json();
-        return json.data.products; 
+        return response.data.data; 
     } catch (error) {
         console.error("Failed to fetch products:", error);
         throw error;

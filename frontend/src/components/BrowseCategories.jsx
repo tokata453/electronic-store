@@ -53,7 +53,7 @@ export default function BrowseCategories() {
                     // We wrap the whole card in an <a> tag so it's fully clickable
                     <a 
                         key={category.id} 
-                        href={`/category/${category.slug}`}
+                        href={`/category/${category.id}`}
                         className="group block focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-xl"
                     >
                         {/* shadcn Card with hover transitions */}
