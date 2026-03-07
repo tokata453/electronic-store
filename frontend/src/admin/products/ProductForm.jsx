@@ -1,4 +1,5 @@
 import ImageUploader from "./ImageUploader";
+import SpecsEditor from "./SpecsEditor";
 
 export default function ProductForm({
   value,
@@ -115,15 +116,6 @@ export default function ProductForm({
           </select>
         </div>
 
-        <div className="md:col-span-2">
-          <label className="mb-1 block text-sm text-slate-300">Description</label>
-          <textarea
-            rows={5}
-            value={value.description}
-            onChange={(e) => set("description", e.target.value)}
-            className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-white outline-none focus:border-slate-500"
-          />
-        </div>
         <div className="flex items-start gap-2">
           <input
             id="isActive"
@@ -147,8 +139,27 @@ export default function ProductForm({
             Featured
           </label>
         </div>
-        <div></div>
+
+        <div className="md:col-span-2">
+          <label className="mb-1 block text-sm text-slate-300">Description</label>
+          <textarea
+            rows={5}
+            value={value.description}
+            onChange={(e) => set("description", e.target.value)}
+            className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-white outline-none focus:border-slate-500"
+          />
+        </div>
         
+        <SpecsEditor
+          specifications={value.specifications}
+          onChange={(nextSpecifications) =>
+            onChange({
+              ...value,
+              specifications: nextSpecifications,
+            })
+          }
+        />
+
         <ImageUploader
           images={value.images}
           imageUrls={value.imageUrls}
