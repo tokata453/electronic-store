@@ -6,6 +6,8 @@ import LoginForm from './components/login-form';
 import Register from './components/Register';
 import ProductsPage from "./admin/products/ProductsPage";
 import ProductFormPage from "./admin/products/ProductFormPage";
+import SearchResults from './pages/SearchResults';
+import CategoryPage from './pages/CategoryPage';
 
 const router = createBrowserRouter([
   {
@@ -25,10 +27,14 @@ const router = createBrowserRouter([
         path: "register", // Loads at "/register"
         element: <Register />,
       },
-      //{
-        //path: "category/:categoryName",
-        //element: <CategoryPage />,
-      //}
+      {
+        path: "products",
+        element: <SearchResults />,
+      },
+      {
+        path: "category/:id",
+        element: <CategoryPage />,
+      },
     ],
   },
 

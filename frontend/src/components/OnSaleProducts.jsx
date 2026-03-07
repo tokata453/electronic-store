@@ -12,7 +12,7 @@ export default function OnSaleProducts() {
             try {
                 // Fetch up to 6 products with the 'Sale' badge for the homepage row
                 const data = await getProducts({ badge: 'Sale', limit: 6 });
-                setProducts(data);
+                setProducts(data.products);
             } catch (err) {
                 setError(err.message);
             } finally {

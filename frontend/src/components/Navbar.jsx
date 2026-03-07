@@ -1,37 +1,34 @@
-import { ChevronRight, Menu, Smartphone, HardDrive, Monitor, Printer, Wifi,Shield } from "lucide-react";
-
-const categories = [
-  {
-    name: "PC",
-    icon: Smartphone
-  },
-  {
-    name: "Hard Drive",
-    icon: HardDrive,
-  },
-  {
-    name: "Monitor",
-    icon: Monitor,
-  },
-  {
-    name: "Printer",
-    icon: Printer,
-  },
-  {
-    name: "Wifi",
-    icon: Wifi,
-  },
-  {
-    name: "Security",
-    icon: Shield,
-  },
-];
+import React, { useState, useEffect } from "react";
+import { ChevronRight, Menu } from "lucide-react";
+import { Link } from "react-router-dom";
+import { getCategories } from "../services/categories"; // Make sure this path is correct!
 
 export default function Navbar() {
+  const [categories, setCategories] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Fetch categories when the Navbar mounts
+  useEffect(() => {
+    const fetchNavCategories = async () => {
+      try {
+        const data = await getCategories();
+        setCategories(data);
+      } catch (error) {
+        console.error("Failed to load categories for navbar", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchNavCategories();
+  }, []);
+
   return (
     <nav className="w-full bg-white px-6 py-4 flex items-center gap-12">
+      
       {/* LEFT: Browse Category + Dropdown */}
-      <div className="relative group">
+      <div className="relative group z-50">
+        
         {/* Browse button */}
         <button className="flex items-center gap-3 bg-white hover:bg-gray-200 px-5 py-3 rounded-xl font-medium transition">
           <Menu size={20} />
@@ -48,44 +45,54 @@ export default function Navbar() {
             opacity-0 invisible
             group-hover:opacity-100 group-hover:visible
             transition-all duration-200
-            z-50
           "
         >
           <ul className="p-3 space-y-2">
-            {categories.map((category, i) => {
-              const Icon = category.icon;
-
-              return (
+            {isLoading ? (
+              <li className="p-4 text-center text-sm text-gray-500">Loading categories...</li>
+            ) : categories.length === 0 ? (
+              <li className="p-4 text-center text-sm text-gray-500">No categories found</li>
+            ) : (
+              categories.map((category) => (
                 <li
-                  key={i}
-                  className="flex items-center justify-between p-3 rounded-lg hover:bg-gray-200 cursor-pointer transition"
+                  key={category.id}
+                  className="rounded-lg hover:bg-gray-200 cursor-pointer transition"
                 >
-                  <div className="flex items-center gap-4">
-                    
-                    {/* icon */}
-                    <Icon size={20} className="text-gray-600" />
+                  {/* Notice the Link here uses category.id to prevent the 500 Error! */}
+                  <Link 
+                    to={`/category/${category.id}`} 
+                    className="flex items-center justify-between p-3 w-full"
+                  >
+                    <div className="flex items-center gap-4">
+                      
+                      {/* API Icon (Emoji) */}
+                      <span className="text-xl" role="img" aria-label={category.name}>
+                        {category.icon}
+                      </span>
 
-                    {/* text */}
-                    <span className="font-medium">
-                      {category.name}
-                    </span>
-                  </div>
+                      {/* text */}
+                      <span className="font-medium">
+                        {category.name}
+                      </span>
+                    </div>
 
-                  <ChevronRight size={18} className="text-gray-500" />
+                    <ChevronRight size={18} className="text-gray-500" />
+                  </Link>
                 </li>
-              );
-            })}
+              ))
+            )}
           </ul>
         </div>
       </div>
 
       {/* RIGHT: Navigation links */}
       <ul className="flex items-center gap-10 font-semibold">
-        <li className="text-blue-500 cursor-pointer">HOME</li>
-        <li className="cursor-pointer hover:text-blue-500">PRODUCTS</li>
-        <li className="cursor-pointer hover:text-blue-500">CONTACT US</li>
-        <li className="cursor-pointer hover:text-blue-500">ORDERS</li>
-        <li className="cursor-pointer hover:text-blue-500">TRACK ORDER</li>
+        {/* Wrapping standard links in React Router Links */}
+        <li><Link to="/" className="text-blue-500 hover:text-blue-600 transition">HOME</Link></li>
+        <li><Link to="/products" className="text-gray-700 hover:text-blue-500 transition">PRODUCTS</Link></li>
+        <li><Link to="/contact" className="text-gray-700 hover:text-blue-500 transition">CONTACT US</Link></li>
+        <li><Link to="/orders" className="text-gray-700 hover:text-blue-500 transition">ORDERS</Link></li>
+        <li><Link to="/track-order" className="text-gray-700 hover:text-blue-500 transition">TRACK ORDER</Link></li>
       </ul>
     </nav>
   );
