@@ -100,7 +100,7 @@ export default function ImageUploader({
                 onClick={() => onRemove(index)}
                 className="absolute right-2 top-2 rounded-md bg-red-500 px-2 py-1 text-xs font-medium text-white hover:bg-red-600"
               >
-                Remove
+                ✕
               </button>
             </div>
           ))}
