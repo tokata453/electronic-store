@@ -1,8 +1,13 @@
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import MainLayout from './layouts/MainLayout';
+import AdminLayout from "./admin/AdminLayout";
 import Home from './pages/Home';
 import LoginForm from './components/login-form';
 import Register from './components/Register';
+import ProductsPage from "./admin/products/ProductsPage";
+import ProductFormPage from "./admin/products/ProductFormPage";
+import SearchResults from './pages/SearchResults';
+import CategoryPage from './pages/CategoryPage';
 
 const router = createBrowserRouter([
   {
@@ -22,10 +27,34 @@ const router = createBrowserRouter([
         path: "register", // Loads at "/register"
         element: <Register />,
       },
-      // {
-      //   path: "category/:categoryName",
-      //   element: <CategoryPage />,
-      // }
+      {
+        path: "products",
+        element: <SearchResults />,
+      },
+      {
+        path: "category/:id",
+        element: <CategoryPage />,
+      },
+    ],
+  },
+
+  // ADMIN ROUTES
+  {
+    path: "/admin",
+    element: <AdminLayout />,
+    children: [
+      {
+        path: "products",
+        element: <ProductsPage />,
+      },
+      {
+        path: "products/new",
+        element: <ProductFormPage />
+      },
+      {
+        path: "products/:id",
+        element: <ProductFormPage />
+      }
     ],
   },
 ]);
