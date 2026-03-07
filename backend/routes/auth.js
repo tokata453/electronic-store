@@ -88,7 +88,7 @@ router.get(
  * @desc    Handle Google OAuth callback
  * @access  Public
  */
-router.get('/google/callback', passport.authenticate('google', { failureRedirect: '/login' }), googleCallbackHandler);
+router.get('/google/callback', passport.authenticate('google', { failureRedirect: `${process.env.CLIENT_URL}/auth/error` } ), googleCallbackHandler);
 
 /**
  * @route   GET /api/auth/facebook
@@ -108,7 +108,7 @@ router.get(
  * @desc    Handle Facebook OAuth callback
  * @access  Public
  */
-router.get('/facebook/callback', passport.authenticate('facebook', { failureRedirect: '/login' }), facebookCallbackHandler);
+router.get('/facebook/callback', passport.authenticate('facebook', { failureRedirect: `${process.env.CLIENT_URL}/auth/error` } ), facebookCallbackHandler);
 
 
 module.exports = router;
