@@ -100,10 +100,6 @@ const getCategory = async (req, res, next) => {
           as: 'products',
           where: { isActive: true },
           required: false,
-          attributes: [
-            'id', 'name', 'slug', 'price', 'salePrice', 
-            'images', 'badge', 'rating', 'reviewCount', 'stock'
-          ]
         }
       ]
     });
