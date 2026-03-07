@@ -70,7 +70,6 @@ const getCategories = async (req, res, next) => {
     const categories = await Category.findAll({
       where: { isActive: true },
       order: [['sortOrder', 'ASC'], ['name', 'ASC']],
-      attributes: ['id', 'name', 'slug', 'description', 'icon', 'image', 'sortOrder']
     });
 
     const categoriesWithUrls = await addPresignedUrlToCategories(categories);
