@@ -1,43 +1,47 @@
 import { NavLink, Outlet } from "react-router-dom";
 import { useState } from "react";
+import { UseTheme } from "./products/UseTheme";
 
 export default function AdminLayout() {
   const [collapsed, setCollapsed] = useState(false);
+  const { theme } = UseTheme();
+  const dark = theme === "dark";
 
   return (
-    <div className="flex min-h-screen bg-slate-950 text-slate-100">
+    <div className={`flex min-h-screen ${dark ? "bg-slate-950 text-slate-100" : "bg-slate-100 text-slate-900"}`}>
 
       {/* Sidebar */}
       <aside
-        className={`transition-all duration-300 bg-slate-900 border-r border-slate-800
+        className={`sticky top-0 h-screen transition-all duration-300 ${dark ? "bg-slate-900 border-slate-800" : "bg-white border-slate-200"} border-r
         ${collapsed ? "w-16" : "w-64"} flex flex-col`}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-slate-800">
+        <div className={`flex items-center justify-between p-4 border-b ${dark ? "border-slate-800" : "border-slate-200"}`}>
           {!collapsed && (
             <span className="text-lg font-semibold">i-Tech Admin</span>
           )}
-
           <button
             onClick={() => setCollapsed(!collapsed)}
-            className="text-slate-400 hover:text-white"
+            className={`${dark ? "text-slate-400 hover:text-white" : "text-slate-500 hover:text-slate-900"}`}
           >
             ☰
           </button>
         </div>
 
         {/* Navigation */}
-        <nav className="flex flex-col gap-2 p-2">
-
+        <nav className="flex flex-col gap-2 p-2 flex-1">
           <NavLink
             to="/admin/products"
             end
             className={({ isActive }) =>
               `rounded-lg px-3 py-2 text-sm transition
-              ${isActive ? "bg-slate-800 text-white" : "text-slate-300 hover:bg-slate-800"}`
+              ${isActive
+                ? dark ? "bg-slate-800 text-white" : "bg-slate-200 text-slate-900"
+                : dark ? "text-slate-300 hover:bg-slate-800" : "text-slate-600 hover:bg-slate-100"
+              }`
             }
           >
-            {collapsed ? "📦" : "Products"}
+            {collapsed ? "📦" : "📦  Products"}
           </NavLink>
 
           <NavLink
@@ -45,13 +49,37 @@ export default function AdminLayout() {
             end
             className={({ isActive }) =>
               `rounded-lg px-3 py-2 text-sm transition
-              ${isActive ? "bg-slate-800 text-white" : "text-slate-300 hover:bg-slate-800"}`
+              ${isActive
+                ? dark ? "bg-slate-800 text-white" : "bg-slate-200 text-slate-900"
+                : dark ? "text-slate-300 hover:bg-slate-800" : "text-slate-600 hover:bg-slate-100"
+              }`
             }
           >
-            {collapsed ? "➕" : "Add Product"}
+            {collapsed ? "➕" : "➕  Add Product"}
           </NavLink>
-
         </nav>
+
+        {/* Settings button at bottom */}
+        <div className={`p-2 border-t ${dark ? "border-slate-800" : "border-slate-200"}`}>
+          <NavLink
+            to="/admin/settings"
+            end
+            className={({ isActive }) =>
+              `flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition
+              ${isActive
+                ? dark ? "bg-slate-800 text-white" : "bg-slate-200 text-slate-900"
+                : dark ? "text-slate-300 hover:bg-slate-800" : "text-slate-600 hover:bg-slate-100"
+              }`
+            }
+          >
+            {collapsed ? "⚙️" : (
+              <>
+                <span>⚙️</span>
+                <span>Settings</span>
+              </>
+            )}
+          </NavLink>
+        </div>
       </aside>
 
       {/* Main content */}

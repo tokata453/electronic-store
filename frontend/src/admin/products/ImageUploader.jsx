@@ -1,56 +1,29 @@
 import { useRef, useState } from "react";
+import { UseTheme } from "./UseTheme";
 
-export default function ImageUploader({
-  imageUrls = [],
-  onFilesSelected,
-  onRemove,
-}) {
+export default function ImageUploader({ imageUrls = [], onFilesSelected, onRemove }) {
   const inputRef = useRef(null);
   const [isDragging, setIsDragging] = useState(false);
+  const { theme } = UseTheme();
+  const dark = theme === "dark";
 
-  function handleDragEnter(e) {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(true);
-  }
-
-  function handleDragOver(e) {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(true);
-  }
-
-  function handleDragLeave(e) {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
-  }
+  function handleDragEnter(e) { e.preventDefault(); e.stopPropagation(); setIsDragging(true); }
+  function handleDragOver(e) { e.preventDefault(); e.stopPropagation(); setIsDragging(true); }
+  function handleDragLeave(e) { e.preventDefault(); e.stopPropagation(); setIsDragging(false); }
 
   function handleDrop(e) {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(false);
-
-    const files = Array.from(e.dataTransfer?.files || []).filter((file) =>
-      file.type.startsWith("image/")
-    );
-
+    const files = Array.from(e.dataTransfer?.files || []).filter((f) => f.type.startsWith("image/"));
     if (files.length === 0) return;
-
-    onFilesSelected({
-      target: {
-        files,
-        value: "",
-      },
-    });
+    onFilesSelected({ target: { files, value: "" } });
   }
 
-  function handleClick() {
-    inputRef.current?.click();
-  }
+  function handleClick() { inputRef.current?.click(); }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 md:col-span-2">
       <div
         onClick={handleClick}
         onDragEnter={handleDragEnter}
@@ -60,23 +33,17 @@ export default function ImageUploader({
         className={`flex h-36 cursor-pointer items-center justify-center rounded-xl border-2 border-dashed transition ${
           isDragging
             ? "border-emerald-400 bg-emerald-400/10"
-            : "border-slate-600 bg-slate-900 hover:border-slate-400"
+            : dark
+              ? "border-slate-600 bg-slate-900 hover:border-slate-400"
+              : "border-slate-300 bg-slate-50 hover:border-slate-400"
         }`}
       >
-        <input
-          ref={inputRef}
-          type="file"
-          accept="image/*"
-          multiple
-          className="hidden"
-          onChange={onFilesSelected}
-        />
-
+        <input ref={inputRef} type="file" accept="image/*" multiple className="hidden" onChange={onFilesSelected} />
         <div className="text-center">
-          <p className="font-medium text-slate-200">
+          <p className={`font-medium ${dark ? "text-slate-200" : "text-slate-700"}`}>
             Drag images here or click to upload
           </p>
-          <p className="mt-1 text-sm text-slate-400">
+          <p className={`mt-1 text-sm ${dark ? "text-slate-400" : "text-slate-500"}`}>
             PNG, JPG, WEBP supported
           </p>
         </div>
@@ -87,14 +54,9 @@ export default function ImageUploader({
           {imageUrls.map((url, index) => (
             <div
               key={`${url}-${index}`}
-              className="relative overflow-hidden rounded-lg border border-slate-700 bg-slate-950"
+              className={`relative overflow-hidden rounded-lg border ${dark ? "border-slate-700 bg-slate-950" : "border-slate-200 bg-white"}`}
             >
-              <img
-                src={url}
-                alt={`Preview ${index + 1}`}
-                className="h-32 w-full object-cover"
-              />
-
+              <img src={url} alt={`Preview ${index + 1}`} className="h-32 w-full object-cover" />
               <button
                 type="button"
                 onClick={() => onRemove(index)}
