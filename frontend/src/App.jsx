@@ -6,25 +6,26 @@ import LoginForm from './components/login-form';
 import Register from './components/Register';
 import ProductsPage from "./admin/products/ProductsPage";
 import ProductFormPage from "./admin/products/ProductFormPage";
+import SettingsPage from "./admin/products/SettingsPage";
 import SearchResults from './pages/SearchResults';
 import CategoryPage from './pages/CategoryPage';
+import { ThemeProvider } from './admin/products/ThemeContext.jsx';
 
 const router = createBrowserRouter([
   {
-    // The main parent route. Everything inside 'children' will render inside MainLayout's <Outlet />
     path: "/",
-    element: <MainLayout />, // main layout appears in every page
+    element: <MainLayout />,
     children: [
       {
-        index: true, // home page at '/'
+        index: true,
         element: <Home />,
       },
       {
-        path: "login", // Loads at "/login"
+        path: "login",
         element: <LoginForm />,
       },
       {
-        path: "register", // Loads at "/register"
+        path: "register",
         element: <Register />,
       },
       {
@@ -54,11 +55,19 @@ const router = createBrowserRouter([
       {
         path: "products/:id",
         element: <ProductFormPage />
-      }
+      },
+      {
+        path: "settings",
+        element: <SettingsPage />
+      },
     ],
   },
 ]);
 
 export default function App() {
-  return <RouterProvider router={router} />;
+  return (
+    <ThemeProvider>
+      <RouterProvider router={router} />
+    </ThemeProvider>
+  );
 }
