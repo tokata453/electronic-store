@@ -10,6 +10,8 @@ import SettingsPage from "./admin/products/SettingsPage";
 import SearchResults from './pages/SearchResults';
 import CategoryPage from './pages/CategoryPage';
 import { ThemeProvider } from './admin/products/ThemeContext.jsx';
+import CategoriesPage from "./admin/products/CategoriesPage";
+import CategoryFormPage from "./admin/products/CategoryFormPage";
 
 const router = createBrowserRouter([
   {
@@ -59,6 +61,18 @@ const router = createBrowserRouter([
       {
         path: "settings",
         element: <SettingsPage />
+      },
+      {
+        path: "categories",
+        element: <CategoriesPage />
+      },
+      {
+        path: "categories/new",
+        element: <CategoryFormPage />
+      },
+      {
+        path: "categories/:id",
+        element: <CategoryFormPage />
       },
     ],
   },

@@ -3,7 +3,6 @@
 const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
 function getToken() {
-  // Adjust to wherever you store it after login
   return localStorage.getItem("token");
 }
 
@@ -31,6 +30,8 @@ async function request(path, options = {}) {
 
   return data;
 }
+
+// ─── Products ────────────────────────────────────────────────────────────────
 
 export async function listProducts({
   search = "",
@@ -114,5 +115,65 @@ export async function uploadProductImage(id, file) {
     uploadedUrls: json?.data?.uploadedUrls ?? [],
     allImages: json?.data?.allImages ?? [],
     product: json?.data?.product ?? null,
+  };
+}
+
+// ─── Categories ──────────────────────────────────────────────────────────────
+
+export async function listCategories() {
+  const res = await request(`/api/categories`);
+  return res.data?.categories ?? res.data ?? [];
+}
+
+export async function getCategory(id) {
+  const res = await request(`/api/categories/${id}`);
+  return res.data?.category ?? res.data;
+}
+
+export async function createCategory(category) {
+  const res = await request(`/api/categories`, {
+    method: "POST",
+    body: JSON.stringify(category),
+  });
+  return res.data?.category ?? res.data;
+}
+
+export async function updateCategory(id, category) {
+  const res = await request(`/api/categories/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(category),
+  });
+  return res.data?.category ?? res.data;
+}
+
+export async function deleteCategory(id) {
+  await request(`/api/categories/${id}`, { method: "DELETE" });
+  return true;
+}
+
+export async function uploadCategoryImage(id, file) {
+  const formData = new FormData();
+  formData.append("image", file);
+
+  const token = getToken();
+
+  const res = await fetch(`${API_BASE}/api/upload/category/${id}`, {
+    method: "POST",
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: formData,
+  });
+
+  const json = await res.json();
+
+  if (!res.ok) {
+    throw new Error(json?.message || "Upload failed");
+  }
+
+  return {
+    key: json?.data?.key ?? null,
+    imageUrl: json?.data?.imageUrl ?? null,
+    category: json?.data?.category ?? null,
   };
 }
