@@ -118,6 +118,7 @@ export default function ProductsPage() {
               <th className="px-4 py-3">Price</th>
               <th className="px-4 py-3">Stock</th>
               <th className="px-4 py-3">Category</th>
+              <th className="px-4 py-3">Status</th>
               <th className="px-4 py-3 text-right">Actions</th>
             </tr>
           </thead>
@@ -125,13 +126,13 @@ export default function ProductsPage() {
           <tbody className={`divide-y ${dark ? "divide-slate-800" : "divide-slate-100"}`}>
             {loading ? (
               <tr>
-                <td className={`px-4 py-4 ${dark ? "text-slate-400" : "text-slate-500"}`} colSpan={6}>
+                <td className={`px-4 py-4 ${dark ? "text-slate-400" : "text-slate-500"}`} colSpan={7}>
                   Loading...
                 </td>
               </tr>
             ) : items.length === 0 ? (
               <tr>
-                <td className={`px-4 py-4 ${dark ? "text-slate-400" : "text-slate-500"}`} colSpan={6}>
+                <td className={`px-4 py-4 ${dark ? "text-slate-400" : "text-slate-500"}`} colSpan={7}>
                   No products found.
                 </td>
               </tr>
@@ -162,6 +163,17 @@ export default function ProductsPage() {
                   </td>
                   <td className="px-4 py-3">{p.stock}</td>
                   <td className="px-4 py-3">{p.category?.name ?? "-"}</td>
+
+                  <td className="px-4 py-3">
+                    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
+                      p.isActive
+                        ? "bg-emerald-500/15 text-emerald-500"
+                        : dark ? "bg-slate-700 text-slate-400" : "bg-slate-100 text-slate-500"
+                    }`}>
+                      {p.isActive ? "Active" : "Inactive"}
+                    </span>
+                  </td>
+
                   <td className="px-4 py-3">
                     <div className="flex justify-end gap-2">
                       <Link

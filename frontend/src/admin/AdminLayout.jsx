@@ -57,6 +57,34 @@ export default function AdminLayout() {
           >
             {collapsed ? "➕" : "➕  Add Product"}
           </NavLink>
+
+          <NavLink
+            to="/admin/categories"
+            end
+            className={({ isActive }) =>
+              `rounded-lg px-3 py-2 text-sm transition
+              ${isActive
+                ? dark ? "bg-slate-800 text-white" : "bg-slate-200 text-slate-900"
+                : dark ? "text-slate-300 hover:bg-slate-800" : "text-slate-600 hover:bg-slate-100"
+              }`
+            }
+          >
+            {collapsed ? "🗂️" : "🗂️  Categories"}
+          </NavLink>
+
+          <NavLink
+            to="/admin/categories/new"
+            end
+            className={({ isActive }) =>
+              `rounded-lg px-3 py-2 text-sm transition
+              ${isActive
+                ? dark ? "bg-slate-800 text-white" : "bg-slate-200 text-slate-900"
+                : dark ? "text-slate-300 hover:bg-slate-800" : "text-slate-600 hover:bg-slate-100"
+              }`
+            }
+          >
+            {collapsed ? "➕" : "➕  Add Category"}
+          </NavLink>
         </nav>
 
         {/* Settings button at bottom */}
