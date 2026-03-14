@@ -5,6 +5,7 @@ import {
     CardDescription,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 
 export default function ProductCard({ product }) {
     // Safely grab the first image and handle your relative/absolute URL logic
@@ -17,10 +18,11 @@ export default function ProductCard({ product }) {
     const salePrice = product?.salePrice ? parseFloat(product.salePrice).toFixed(2) : null;
 
     return (
+        <Link to={`/product/${product.id}`} className="block group h-full">
         <Card className="w-full max-w-[320px] flex flex-col">
-            <CardContent className="flex flex-col flex-1 p-4">
+            <CardContent className="flex flex-col flex-1 p-">
                 {/* Product Image */}
-                <div className="relative mb-6">
+                <div className="relative mb-4">
                     <div className="bg-muted rounded-2xl flex items-center justify-center h-70 relative overflow-hidden">
                         <img
                             src={imageUrl}
@@ -32,22 +34,15 @@ export default function ProductCard({ product }) {
                 </div>
 
                 {/* Product Info */}
-                <div className="mb-4">
-                    <CardTitle className="text-xl leading-tight mb-2 ">
+                <div className="mb-auto">
+                    <CardTitle className="text-xl leading-tight mb-2 line-clamp-1 ">
                         {product?.name}
                     </CardTitle>
-                    <CardDescription className="text-sm line-clamp-3">
-                        {product?.description}
-                    </CardDescription>
-                </div>
-
-                {/* Price and Action Row */}
-                <div className="flex flex-col gap-4 mt-auto pt-2">
                     <div className="flex items-baseline gap-2">
                         {/* Inline Pricing Logic matching your reference image */}
                         {salePrice ? (
                             <>
-                                <span className="text-lg font-medium text-muted-foreground line-through">
+                                <span className="text-xl font-medium text-muted-foreground line-through">
                                     ${price}
                                 </span>
                                 <span className="text-xl font-bold">
@@ -60,12 +55,17 @@ export default function ProductCard({ product }) {
                             </span>
                         )}
                     </div>
+                </div>
 
-                    <Button size="lg" className="w-full rounded-full font-semibold" onClick={() => console.log(`Adding ${product?.name} to cart`)}>
+                {/* Action Row */}
+                <div className="flex flex-col gap-4 mt-auto pt-2">
+
+                    <Button size="sm" className="w-full rounded-full font-semibold" onClick={() => console.log(`Adding ${product?.name} to cart`)}>
                         Add to Cart
                     </Button>
                 </div>
             </CardContent>
         </Card>
+        </Link>
     );
 }

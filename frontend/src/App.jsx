@@ -12,6 +12,7 @@ import CategoryPage from './pages/CategoryPage';
 import { ThemeProvider } from './admin/products/ThemeContext.jsx';
 import CategoriesPage from "./admin/products/CategoriesPage";
 import CategoryFormPage from "./admin/products/CategoryFormPage";
+import ProductPage from './pages/ProductPage';
 
 const router = createBrowserRouter([
   {
@@ -38,6 +39,10 @@ const router = createBrowserRouter([
         path: "category/:id",
         element: <CategoryPage />,
       },
+      {
+        path: "product/:id",
+        element: <ProductPage />
+      }
     ],
   },
 
