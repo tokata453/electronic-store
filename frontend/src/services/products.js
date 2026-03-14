@@ -11,3 +11,13 @@ export const getProducts = async (params = {}) => {
         throw error;
     }
 };
+
+export const getProductById = async (id) => {
+    try {
+        const response = await api.get(`/api/products/${id}`);
+        return response.data.data.product;
+    } catch (error) {
+        console.error(`Failed to fetch product ${id}:`, error);
+        throw error;
+    }
+};

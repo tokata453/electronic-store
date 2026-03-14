@@ -35,7 +35,7 @@ export default function SearchResults() {
   }, [searchQuery]); // Re-run this effect whenever the URL search query changes!
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="w-full px-8 lg:px-12 py-8">
       
       {/* Page Header */}
       <div className="mb-8 border-b pb-4">

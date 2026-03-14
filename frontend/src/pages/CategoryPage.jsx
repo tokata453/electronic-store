@@ -45,7 +45,7 @@ export default function CategoryPage() {
   }, [products, sortOrder]);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="w-full px-8 lg:px-12 py-8">
       
       {/* Header & Sort Row */}
       <div className="flex flex-col sm:flex-row justify-between items-center mb-8 border-b pb-4">

@@ -1,7 +1,16 @@
 import React, { useState, useEffect } from "react";
-import { ChevronRight, Menu } from "lucide-react";
+import { ChevronRight, Menu, Smartphone, Laptop, TabletSmartphone, Headphones, Watch, Backpack, LayoutGrid } from "lucide-react";
 import { Link } from "react-router-dom";
-import { getCategories } from "../services/categories"; // Make sure this path is correct!
+import { getCategories } from "../services/categories"; 
+
+const iconMap = {
+  Smartphone: Smartphone,
+  Laptop: Laptop,
+  TabletSmartphone: TabletSmartphone,
+  Headphones: Headphones,
+  Watch: Watch,
+  Backpack: Backpack,
+};
 
 export default function Navbar() {
   const [categories, setCategories] = useState([]);
@@ -53,33 +62,36 @@ export default function Navbar() {
             ) : categories.length === 0 ? (
               <li className="p-4 text-center text-sm text-gray-500">No categories found</li>
             ) : (
-              categories.map((category) => (
-                <li
-                  key={category.id}
-                  className="rounded-lg hover:bg-gray-200 cursor-pointer transition"
-                >
-                  {/* Notice the Link here uses category.id to prevent the 500 Error! */}
-                  <Link 
-                    to={`/category/${category.id}`} 
-                    className="flex items-center justify-between p-3 w-full"
+              /* Changed to use Category Icon */
+              categories.map((category) => {
+                // Uses icon from iconMap if not available, use LayoutGrid
+                const IconComponent = iconMap[category.icon] || LayoutGrid;
+
+                return (
+                  <li
+                    key={category.id}
+                    className="rounded-lg hover:bg-gray-200 cursor-pointer transition"
                   >
-                    <div className="flex items-center gap-4">
-                      
-                      {/* API Icon (Emoji) */}
-                      <span className="text-xl" role="img" aria-label={category.name}>
-                        {category.icon}
-                      </span>
+                    <Link 
+                      to={`/category/${category.id}`} 
+                      className="flex items-center justify-between p-3 w-full"
+                    >
+                      <div className="flex items-center gap-4">
+                        
+                        {/* Render the Lucide Component */}
+                        <IconComponent size={20} className="text-gray-600 shrink-0" />
 
-                      {/* text */}
-                      <span className="font-medium">
-                        {category.name}
-                      </span>
-                    </div>
+                        {/* Category Name */}
+                        <span className="font-medium">
+                          {category.name}
+                        </span>
+                      </div>
 
-                    <ChevronRight size={18} className="text-gray-500" />
-                  </Link>
-                </li>
-              ))
+                      <ChevronRight size={18} className="text-gray-500" />
+                    </Link>
+                  </li>
+                );
+              })
             )}
           </ul>
         </div>
@@ -87,7 +99,6 @@ export default function Navbar() {
 
       {/* RIGHT: Navigation links */}
       <ul className="flex items-center gap-10 font-semibold">
-        {/* Wrapping standard links in React Router Links */}
         <li><Link to="/" className="text-blue-500 hover:text-blue-600 transition">HOME</Link></li>
         <li><Link to="/products" className="text-gray-700 hover:text-blue-500 transition">PRODUCTS</Link></li>
         <li><Link to="/contact" className="text-gray-700 hover:text-blue-500 transition">CONTACT US</Link></li>
