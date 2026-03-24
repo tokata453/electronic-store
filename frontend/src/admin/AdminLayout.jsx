@@ -1,6 +1,7 @@
 import { NavLink, Outlet } from "react-router-dom";
 import { useState } from "react";
 import { UseTheme } from "./products/UseTheme";
+import { Package, PlusCircle, LayoutGrid, PlusSquare, Settings } from "lucide-react";
 
 export default function AdminLayout() {
   const [collapsed, setCollapsed] = useState(false);
@@ -41,7 +42,9 @@ export default function AdminLayout() {
               }`
             }
           >
-            {collapsed ? "📦" : "📦  Products"}
+            <span className="flex items-center gap-2">
+              <Package size={18} /> {!collapsed && "Products"}
+            </span>
           </NavLink>
 
           <NavLink
@@ -55,7 +58,9 @@ export default function AdminLayout() {
               }`
             }
           >
-            {collapsed ? "➕" : "➕  Add Product"}
+            <span className="flex items-center gap-2">
+              <PlusCircle size={18} /> {!collapsed && "Add Product"}
+            </span>
           </NavLink>
 
           <NavLink
@@ -69,7 +74,9 @@ export default function AdminLayout() {
               }`
             }
           >
-            {collapsed ? "🗂️" : "🗂️  Categories"}
+            <span className="flex items-center gap-2">
+              <LayoutGrid size={18} /> {!collapsed && "Categories"}
+            </span>
           </NavLink>
 
           <NavLink
@@ -83,7 +90,9 @@ export default function AdminLayout() {
               }`
             }
           >
-            {collapsed ? "➕" : "➕  Add Category"}
+            <span className="flex items-center gap-2">
+              <PlusSquare size={18} /> {!collapsed && "Add Categories"}
+            </span>
           </NavLink>
         </nav>
 
@@ -100,12 +109,9 @@ export default function AdminLayout() {
               }`
             }
           >
-            {collapsed ? "⚙️" : (
-              <>
-                <span>⚙️</span>
-                <span>Settings</span>
-              </>
-            )}
+            <span className="flex items-center gap-2">
+              <Settings size={18} /> {!collapsed && "Settings"}
+            </span>
           </NavLink>
         </div>
       </aside>
