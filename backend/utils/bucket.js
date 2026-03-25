@@ -13,12 +13,12 @@ const path = require('path');
 // Configure S3 client for Railway Bucket
 const s3 = new S3Client({
   region: process.env.BUCKET_REGION || 'auto',
-  endpoint: `https://${process.env.BUCKET_HOST}`,
+  // endpoint: `https://${process.env.BUCKET_HOST}`,
   credentials: {
     accessKeyId: process.env.BUCKET_ACCESS_KEY_ID,
     secretAccessKey: process.env.BUCKET_SECRET_ACCESS_KEY,
   },
-  forcePathStyle: false, // Virtual-hosted style for Railway
+  // forcePathStyle: false, // Virtual-hosted style for Railway
 });
 
 const BUCKET_NAME = process.env.BUCKET_NAME;
