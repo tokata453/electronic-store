@@ -3,7 +3,11 @@ const express = require('express');
 const router = express.Router();
 const {
   getProducts,
+  getFeaturedProducts,
+  getProductFilters,
   getProduct,
+  getProductBySlug,
+  getRelatedProducts,
   createProduct,
   updateProduct,
   deleteProduct
@@ -41,6 +45,14 @@ const { admin } = require('../middleware/admin');
     });
  */
 router.get('/', getProducts);
+
+router.get('/featured', getFeaturedProducts);
+
+router.get('/filters', getProductFilters);
+
+router.get('/slug/:slug', getProductBySlug);
+
+router.get('/:id/related', getRelatedProducts);
 
 /**
  * @route   GET /api/products/:id

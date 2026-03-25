@@ -3,6 +3,46 @@ const { Product, Category } = require('../models');
 const { Op } = require('sequelize');
 const appError = require('../utils/appError');
 const {generatePresignedUrl} = require('../utils/bucket');
+const ALLOWED_SORT_FIELDS = ['createdAt', 'price', 'name', 'rating', 'reviewCount', 'views', 'stock'];
+const ALLOWED_SORT_ORDER = ['ASC', 'DESC'];
+
+const buildProductWhereClause = ({
+  search,
+  categoryId,
+  minPrice,
+  maxPrice,
+  badge,
+  isFeatured
+}) => {
+  const where = { isActive: true };
+
+  if (search) {
+    where[Op.or] = [
+      { name: { [Op.iLike]: `%${search}%` } },
+      { description: { [Op.iLike]: `%${search}%` } }
+    ];
+  }
+
+  if (categoryId) {
+    where.categoryId = categoryId;
+  }
+
+  if (minPrice || maxPrice) {
+    where.price = {};
+    if (minPrice) where.price[Op.gte] = minPrice;
+    if (maxPrice) where.price[Op.lte] = maxPrice;
+  }
+
+  if (badge) {
+    where.badge = badge;
+  }
+
+  if (isFeatured !== undefined) {
+    where.isFeatured = isFeatured === true || isFeatured === 'true';
+  }
+
+  return where;
+};
 
 // ═══════════════════════════════════════════════════════════
 // HELPER: Add presigned URLs to products
@@ -126,41 +166,24 @@ const getProducts = async (req, res, next) => {
       limit = 20
     } = req.query;
 
-    // Build where clause
-    const where = { isActive: true };
+    const where = buildProductWhereClause({
+      search,
+      categoryId,
+      minPrice,
+      maxPrice,
+      badge,
+      isFeatured
+    });
 
-    // Search by name or description
-    if (search) {
-      where[Op.or] = [
-        { name: { [Op.iLike]: `%${search}%` } },
-        { description: { [Op.iLike]: `%${search}%` } }
-      ];
-    }
-
-    // Filter by category
-    if (categoryId) {
-      where.categoryId = categoryId;
-    }
-
-    // Filter by price range
-    if (minPrice || maxPrice) {
-      where.price = {};
-      if (minPrice) where.price[Op.gte] = minPrice;
-      if (maxPrice) where.price[Op.lte] = maxPrice;
-    }
-
-    // Filter by badge
-    if (badge) {
-      where.badge = badge;
-    }
-
-    // Filter by featured
-    if (isFeatured) {
-      where.isFeatured = isFeatured === 'true';
-    }
+    const safeSortBy = ALLOWED_SORT_FIELDS.includes(sortBy) ? sortBy : 'createdAt';
+    const safeOrder = ALLOWED_SORT_ORDER.includes(String(order).toUpperCase())
+      ? String(order).toUpperCase()
+      : 'DESC';
+    const safePage = Math.max(Number.parseInt(page, 10) || 1, 1);
+    const safeLimit = Math.min(Math.max(Number.parseInt(limit, 10) || 20, 1), 100);
 
     // Pagination
-    const offset = (page - 1) * limit;
+    const offset = (safePage - 1) * safeLimit;
 
     // Get products
     const { count, rows: products } = await Product.findAndCountAll({
@@ -172,9 +195,9 @@ const getProducts = async (req, res, next) => {
           attributes: ['id', 'name', 'slug']
         }
       ],
-      order: [[sortBy, order]],
-      limit: parseInt(limit),
-      offset: parseInt(offset)
+      order: [[safeSortBy, safeOrder]],
+      limit: safeLimit,
+      offset
     });
 
     const productsWithUrls = await addPresignedUrlsToMany(products);
@@ -185,15 +208,81 @@ const getProducts = async (req, res, next) => {
         products: productsWithUrls,
         pagination: {
           total: count,
-          page: parseInt(page),
-          pages: Math.ceil(count / limit),
-          limit: parseInt(limit)
+          page: safePage,
+          pages: Math.ceil(count / safeLimit),
+          limit: safeLimit
         }
       }
     });
 
   } catch (error) {
     return next(new appError('Error fetching products', 500));
+  }
+};
+
+const getFeaturedProducts = async (req, res, next) => {
+  try {
+    const limit = Math.min(Math.max(Number.parseInt(req.query.limit, 10) || 8, 1), 50);
+
+    const products = await Product.findAll({
+      where: { isActive: true, isFeatured: true },
+      include: [
+        {
+          model: Category,
+          as: 'category',
+          attributes: ['id', 'name', 'slug']
+        }
+      ],
+      order: [['createdAt', 'DESC']],
+      limit
+    });
+
+    const productsWithUrls = await addPresignedUrlsToMany(products);
+
+    res.status(200).json({
+      success: true,
+      data: { products: productsWithUrls }
+    });
+  } catch (error) {
+    next(new appError('Error fetching featured products', 500));
+  }
+};
+
+const getProductFilters = async (req, res, next) => {
+  try {
+    const [priceStats, badges] = await Promise.all([
+      Product.findOne({
+        where: { isActive: true },
+        attributes: [
+          [Product.sequelize.fn('MIN', Product.sequelize.col('price')), 'minPrice'],
+          [Product.sequelize.fn('MAX', Product.sequelize.col('price')), 'maxPrice']
+        ],
+        raw: true
+      }),
+      Product.findAll({
+        where: {
+          isActive: true,
+          badge: { [Op.not]: null }
+        },
+        attributes: ['badge'],
+        group: ['badge'],
+        order: [['badge', 'ASC']],
+        raw: true
+      })
+    ]);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        filters: {
+          minPrice: Number(priceStats?.minPrice || 0),
+          maxPrice: Number(priceStats?.maxPrice || 0),
+          badges: badges.map(item => item.badge).filter(Boolean)
+        }
+      }
+    });
+  } catch (error) {
+    next(new appError('Error fetching product filters', 500));
   }
 };
 
@@ -235,6 +324,77 @@ const getProduct = async (req, res, next) => {
   }
 };
 
+const getProductBySlug = async (req, res, next) => {
+  try {
+    const product = await Product.findOne({
+      where: { slug: req.params.slug, isActive: true },
+      include: [
+        {
+          model: Category,
+          as: 'category',
+          attributes: ['id', 'name', 'slug', 'icon']
+        }
+      ]
+    });
+
+    if (!product) {
+      return next(new appError('Product not found', 404));
+    }
+
+    await product.increment('views');
+    const productWithUrls = await addPresignedUrls(product);
+
+    res.status(200).json({
+      success: true,
+      data: { product: productWithUrls }
+    });
+  } catch (error) {
+    next(new appError('Error fetching product', 500));
+  }
+};
+
+const getRelatedProducts = async (req, res, next) => {
+  try {
+    const limit = Math.min(Math.max(Number.parseInt(req.query.limit, 10) || 4, 1), 20);
+    const product = await Product.findByPk(req.params.id);
+
+    if (!product) {
+      return next(new appError('Product not found', 404));
+    }
+
+    const relatedConditions = [{ categoryId: product.categoryId }];
+    if (product.badge) {
+      relatedConditions.push({ badge: product.badge });
+    }
+
+    const relatedProducts = await Product.findAll({
+      where: {
+        isActive: true,
+        id: { [Op.ne]: product.id },
+        [Op.or]: relatedConditions
+      },
+      include: [
+        {
+          model: Category,
+          as: 'category',
+          attributes: ['id', 'name', 'slug']
+        }
+      ],
+      order: [['isFeatured', 'DESC'], ['rating', 'DESC'], ['createdAt', 'DESC']],
+      limit
+    });
+
+    const productsWithUrls = await addPresignedUrlsToMany(relatedProducts);
+
+    res.status(200).json({
+      success: true,
+      data: { products: productsWithUrls }
+    });
+  } catch (error) {
+    next(new appError('Error fetching related products', 500));
+  }
+};
+
 /**
  * @desc    Create new product
  * @route   POST /api/products
@@ -257,9 +417,12 @@ const createProduct = async (req, res, next) => {
       isFeatured
     } = req.body;
 
-    // Validate required fields
-    if (!name || !price || !categoryId) {
+    if (!name || price === undefined || price === null || !categoryId) {
       return next(new appError('Please provide name, price, and category', 400));
+    }
+
+    if (salePrice !== undefined && salePrice !== null && Number(salePrice) > Number(price)) {
+      return next(new appError('Sale price cannot be greater than the regular price', 400));
     }
 
     // Check if category exists
@@ -271,7 +434,7 @@ const createProduct = async (req, res, next) => {
     // Create product
     const product = await Product.create({
       name,
-      slug: slug || name.toLowerCase().replace(/\s+/g, '-'),
+      slug: slug || name.toLowerCase().trim().replace(/\s+/g, '-'),
       description,
       price,
       salePrice,
@@ -308,6 +471,13 @@ const updateProduct = async (req, res, next) => {
 
     if (!product) {
       return next(new appError('Product not found', 404));
+    }
+
+    if (req.body.salePrice !== undefined && req.body.salePrice !== null) {
+      const nextPrice = req.body.price !== undefined ? Number(req.body.price) : Number(product.price);
+      if (Number(req.body.salePrice) > nextPrice) {
+        return next(new appError('Sale price cannot be greater than the regular price', 400));
+      }
     }
     
     // Update product
@@ -363,7 +533,11 @@ const deleteProduct = async (req, res, next) => {
 
 module.exports = {
   getProducts,
+  getFeaturedProducts,
+  getProductFilters,
   getProduct,
+  getProductBySlug,
+  getRelatedProducts,
   createProduct,
   updateProduct,
   deleteProduct

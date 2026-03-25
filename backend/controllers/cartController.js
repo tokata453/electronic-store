@@ -4,6 +4,13 @@ const { generatePresignedUrl } = require('../utils/bucket');
 const { Op } = require('sequelize');
 const AppError = require('../utils/appError');
 
+const parseQuantity = (value) => {
+  const quantity = Number.parseInt(value, 10);
+  return Number.isInteger(quantity) && quantity > 0 ? quantity : null;
+};
+
+const resolveSessionId = (req) => req.headers['x-session-id'] || req.body.sessionId || req.query.sessionId;
+
 // ═══════════════════════════════════════════════════════════
 // HELPERS
 // ═══════════════════════════════════════════════════════════
@@ -81,7 +88,7 @@ const calculateCartSummary = (items) => {
 const getCart = async (req, res, next) => {
   try {
     const userId = req.user?.id;
-    const sessionId = req.headers['x-session-id'] || req.query.sessionId;
+    const sessionId = resolveSessionId(req);
 
     if (!userId && !sessionId) {
       return res.json({
@@ -119,15 +126,17 @@ const getCart = async (req, res, next) => {
 
 const addToCart = async (req, res, next) => {
   try {
-    const { productId, quantity = 1 } = req.body;
+    const { productId } = req.body;
+    const quantity = parseQuantity(req.body.quantity ?? 1);
     const userId = req.user?.id;
-    const sessionId = req.headers['x-session-id'] || req.body.sessionId;
+    const sessionId = resolveSessionId(req);
 
     if (!productId) return next(new AppError("Product ID required", 400))
-    if (quantity < 1) return next(new AppError("Quantity must be at least 1", 400))
+    if (!quantity) return next(new AppError("Quantity must be a positive integer", 400))
+    if (!userId && !sessionId) return next(new AppError("Session ID required for guest cart actions", 400))
 
     const product = await Product.findByPk(productId);
-    if (!product) return next(new AppError('Product not foudnd', 404))
+    if (!product) return next(new AppError('Product not found', 404))
     if (!product.isActive) return next(new AppError('Product not available', 400))
     if (product.stock < quantity) {
       return res.status(400).json({ success: false, error: { message: 'Insufficient stock', availableStock: product.stock } });
@@ -162,7 +171,7 @@ const addToCart = async (req, res, next) => {
     res.json({ success: true, data: { message: 'Item added to cart', item: itemWithUrls, cartId: cart.id } });
   } catch (error) {
     console.error('Add to cart error:', error);
-    res.status(500).json({ success: false, error: { message: error.message } });
+    next(error);
   }
 };
 
@@ -173,11 +182,12 @@ const addToCart = async (req, res, next) => {
 const updateCartItem = async (req, res, next) => {
   try {
     const { itemId } = req.params;
-    const { quantity } = req.body;
+    const quantity = parseQuantity(req.body.quantity);
     const userId = req.user?.id;
-    const sessionId = req.headers['x-session-id'];
+    const sessionId = resolveSessionId(req);
 
-    if (!quantity || quantity < 1) return next(new AppError('Quantity must be at least 1', 400))
+    if (!quantity) return next(new AppError('Quantity must be a positive integer', 400))
+    if (!userId && !sessionId) return next(new AppError('Session ID required for guest cart actions', 400))
 
     const cartItem = await CartItem.findByPk(itemId, {
       include: [
@@ -203,7 +213,7 @@ const updateCartItem = async (req, res, next) => {
     res.json({ success: true, data: { message: 'Cart item updated', item: itemWithUrls } });
   } catch (error) {
     console.error('Update cart item error:', error);
-    res.status(500).json({ success: false, error: { message: error.message } });
+    next(error);
   }
 };
 
@@ -215,19 +225,21 @@ const removeFromCart = async (req, res, next) => {
   try {
     const { itemId } = req.params;
     const userId = req.user?.id;
-    const sessionId = req.headers['x-session-id'];
+    const sessionId = resolveSessionId(req);
+
+    if (!userId && !sessionId) return next(new AppError('Session ID required for guest cart actions', 400))
 
     const cartItem = await CartItem.findByPk(itemId, {
       include: [{ model: Cart, as: 'cart', where: userId ? { userId } : { sessionId } }]
     });
 
-    if (!cartItem) return res.status(404).json({ success: false, error: { message: 'Cart item not found' } });
+    if (!cartItem) return next(new AppError('Cart item not found', 404));
 
     await cartItem.destroy();
     res.json({ success: true, data: { message: 'Item removed from cart' } });
   } catch (error) {
     console.error('Remove from cart error:', error);
-    res.status(500).json({ success: false, error: { message: error.message } });
+    next(error);
   }
 };
 
@@ -238,7 +250,9 @@ const removeFromCart = async (req, res, next) => {
 const clearCart = async (req, res, next) => {
   try {
     const userId = req.user?.id;
-    const sessionId = req.headers['x-session-id'];
+    const sessionId = resolveSessionId(req);
+
+    if (!userId && !sessionId) return next(new AppError('Session ID required for guest cart actions', 400))
 
     const cart = await Cart.findOne({ where: userId ? { userId } : { sessionId } });
     if (!cart) return res.json({ success: true, data: { message: 'Cart is already empty' } });
@@ -247,7 +261,7 @@ const clearCart = async (req, res, next) => {
     res.json({ success: true, data: { message: 'Cart cleared successfully' } });
   } catch (error) {
     console.error('Clear cart error:', error);
-    res.status(500).json({ success: false, error: { message: error.message } });
+    next(error);
   }
 };
 
@@ -296,7 +310,7 @@ const mergeCarts = async (req, res, next) => {
     res.json({ success: true, data: { message: 'Carts merged successfully', mergedItems: guestItems.length } });
   } catch (error) {
     console.error('Merge carts error:', error);
-    res.status(500).json({ success: false, error: { message: error.message } });
+    next(error);
   }
 };
 
@@ -307,7 +321,9 @@ const mergeCarts = async (req, res, next) => {
 const validateCart = async (req, res, next) => {
   try {
     const userId = req.user?.id;
-    const sessionId = req.headers['x-session-id'];
+    const sessionId = resolveSessionId(req);
+
+    if (!userId && !sessionId) return next(new AppError('Session ID required for guest cart actions', 400))
 
     const cart = await Cart.findOne({ where: userId ? { userId } : { sessionId } });
     if (!cart) return res.json({ success: true, data: { valid: true, issues: [] } });
@@ -361,7 +377,7 @@ const validateCart = async (req, res, next) => {
     res.json({ success: true, data: { valid: issues.length === 0, issues, removedItems: itemsToRemove.length } });
   } catch (error) {
     console.error('Validate cart error:', error);
-    res.status(500).json({ success: false, error: { message: error.message } });
+    next(error);
   }
 };
 

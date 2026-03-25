@@ -10,6 +10,10 @@ const passport = require("passport");
 
 const app = express();
 const PORT = process.env.PORT || 5001;
+const allowedOrigins = (process.env.CORS_ORIGINS || process.env.CLIENT_URL || '')
+  .split(',')
+  .map(origin => origin.trim())
+  .filter(Boolean);
 
 // ===============================================
 // Middleware Setup
@@ -20,12 +24,22 @@ app.set('trust proxy', 1);
 
 // Enable CORS for all routes
 app.use(cors({
-  origin: '*', // Allow all origins in development
+  origin(origin, callback) {
+    if (!origin || process.env.NODE_ENV !== 'production') {
+      return callback(null, true);
+    }
+
+    if (allowedOrigins.length === 0 || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+    return callback(new Error('CORS origin not allowed'));
+  },
   credentials: true
 }));
 
 // Parse JSON bodies
-app.use(express.json());
+app.use(express.json({ limit: '1mb' }));
 
 // Parse URL-encoded bodies
 app.use(express.urlencoded({ extended: true }));
@@ -44,6 +58,7 @@ app.use(
     saveUninitialized: false,
     cookie: {
       secure: process.env.NODE_ENV === "production", // Use secure cookies in production
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
       maxAge: 1000 * 60 * 60 * 24, // 1 day
     },
   })
@@ -130,6 +145,16 @@ app.use(globalErrorHandler);
 // Database and Server Startup
 const startServer = async () => {
   try {
+    if (process.env.NODE_ENV === 'production') {
+      if (!process.env.JWT_SECRET) {
+        throw new Error('JWT_SECRET is required in production');
+      }
+
+      if (!process.env.SESSION_SECRET) {
+        throw new Error('SESSION_SECRET is required in production');
+      }
+    }
+
     // Test database connection
     await db.sequelize.authenticate();
     console.log("✅ Database connection established");

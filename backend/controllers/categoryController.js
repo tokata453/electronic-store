@@ -122,6 +122,37 @@ const getCategory = async (req, res, next) => {
   }
 };
 
+const getCategoryBySlug = async (req, res, next) => {
+  try {
+    const category = await Category.findOne({
+      where: { slug: req.params.slug, isActive: true },
+      include: [
+        {
+          model: Product,
+          as: 'products',
+          where: { isActive: true },
+          required: false,
+        }
+      ]
+    });
+
+    if (!category) {
+      return next(new AppError('Category not found', 404));
+    }
+
+    const categoryWithUrls = await addPresignedUrlToCategory(category);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        category: categoryWithUrls
+      }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 /**
  * @desc    Create new category
  * @route   POST /api/categories
@@ -227,6 +258,7 @@ const deleteCategory = async (req, res, next) => {
 module.exports = {
   getCategories,
   getCategory,
+  getCategoryBySlug,
   createCategory,
   updateCategory,
   deleteCategory

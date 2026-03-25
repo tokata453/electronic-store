@@ -57,4 +57,42 @@ const protect = async (req, res, next) => {
   }
 };
 
-module.exports = { protect };
+const optionalProtect = async (req, res, next) => {
+  try {
+    let token;
+
+    if (
+      req.headers.authorization &&
+      req.headers.authorization.startsWith('Bearer ')
+    ) {
+      token = req.headers.authorization.split(' ')[1];
+    }
+
+    if (!token) {
+      return next();
+    }
+
+    try {
+      const decoded = jwt.verify(
+        token,
+        process.env.JWT_SECRET || 'your-secret-key-change-this'
+      );
+
+      const user = await User.findByPk(decoded.id, {
+        attributes: { exclude: ['password'] }
+      });
+
+      if (user && user.isActive) {
+        req.user = user;
+      }
+    } catch (error) {
+      // Ignore invalid optional auth and continue as guest.
+    }
+
+    next();
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = { protect, optionalProtect };

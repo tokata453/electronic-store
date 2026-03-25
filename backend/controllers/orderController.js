@@ -1,7 +1,93 @@
 // controllers/orderController.js
-const { Order, OrderItem, Product, User } = require('../models');
+const { Order, OrderItem, Product, User, Cart, CartItem } = require('../models');
 const { sequelize } = require('../models');
+const { Op } = require('sequelize');
 const appError = require('../utils/appError');
+
+const VALID_ORDER_STATUSES = ['pending', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded'];
+const VALID_PAYMENT_METHODS = ['credit_card', 'paypal', 'cod', 'bank_transfer', 'aba', 'acleda'];
+
+const parsePositiveInt = (value) => {
+  const parsed = Number.parseInt(value, 10);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+};
+
+const normalizeOrderItems = (items = []) => items.map(item => ({
+  productId: Number.parseInt(item.productId, 10),
+  quantity: parsePositiveInt(item.quantity)
+}));
+
+const validateAddress = (address) => {
+  if (!address || typeof address !== 'object' || Array.isArray(address)) {
+    return false;
+  }
+
+  const requiredFields = ['fullName', 'phone', 'addressLine1', 'city'];
+  return requiredFields.every(field => typeof address[field] === 'string' && address[field].trim());
+};
+
+const buildOrderSummary = async (items, transaction) => {
+  let subtotal = 0;
+  const orderItems = [];
+
+  for (const item of normalizeOrderItems(items)) {
+    if (!item.productId || !item.quantity) {
+      throw new appError('Each order item must include a valid productId and quantity', 400);
+    }
+
+    const product = await Product.findOne({
+      where: {
+        id: item.productId,
+        isActive: true,
+        stock: { [Op.gte]: item.quantity }
+      },
+      transaction
+    });
+
+    if (!product) {
+      throw new appError(`Product with ID ${item.productId} is unavailable or out of stock`, 400);
+    }
+
+    const [updatedCount] = await Product.update(
+      {
+        stock: sequelize.literal(`stock - ${item.quantity}`)
+      },
+      {
+        where: {
+          id: product.id,
+          isActive: true,
+          stock: { [Op.gte]: item.quantity }
+        },
+        transaction
+      }
+    );
+
+    if (updatedCount !== 1) {
+      throw new appError(`Insufficient stock for ${product.name}`, 400);
+    }
+
+    const price = Number(product.salePrice || product.price);
+    const totalPrice = Number((price * item.quantity).toFixed(2));
+    subtotal += totalPrice;
+
+    orderItems.push({
+      productId: product.id,
+      productName: product.name,
+      productImage: Array.isArray(product.images) && product.images.length > 0 ? product.images[0] : null,
+      quantity: item.quantity,
+      price,
+      totalPrice
+    });
+  }
+
+  return {
+    subtotal: Number(subtotal.toFixed(2)),
+    tax: 0,
+    shippingCost: 0,
+    discount: 0,
+    orderItems
+  };
+};
 
 /**
  * @desc    Create new order
@@ -20,67 +106,33 @@ const createOrder = async (req, res, next) => {
       notes
     } = req.body;
 
-    // Validate required fields
-    if (!items || items.length === 0) {
+    if (!Array.isArray(items) || items.length === 0) {
       await t.rollback();
       return next(new appError('Order must contain at least one item', 400));
     }
 
-    if (!shippingAddress) {
+    if (!validateAddress(shippingAddress)) {
       await t.rollback();
-      return next(new appError('Shipping address is required', 400));
+      return next(new appError('A valid shipping address is required', 400));
     }
     if (!paymentMethod) {
       await t.rollback();
       return next(new appError('Payment method is required', 400));
     }
-
-    // Calculate order totals and validate products
-    let subtotal = 0;
-    const orderItems = [];
-
-    for (const item of items) {
-      const product = await Product.findByPk(item.productId, { transaction: t });
-
-      if (!product) {
-        await t.rollback();
-        return next(new appError(`Product with ID ${item.productId} not found`, 404));
-      }
-
-      if (product.stock < item.quantity) {
-        await t.rollback();
-        return next(new appError(`Insufficient stock for ${product.name}. Available: ${product.stock}`, 400));
-      }
-
-      // Calculate price (use salePrice if available)
-      const price = product.salePrice || product.price;
-      const totalPrice = price * item.quantity;
-      subtotal += totalPrice;
-
-      // Reduce product stock
-      await product.decrement('stock', {
-        by: item.quantity,
-        transaction: t
-      });
-
-      orderItems.push({
-        productId: product.id,
-        productName: product.name,
-        productImage: product.images ? product.images[0] : null,
-        quantity: item.quantity,
-        price: price,
-        totalPrice: totalPrice
-      });
+    if (!VALID_PAYMENT_METHODS.includes(paymentMethod)) {
+      await t.rollback();
+      return next(new appError('Invalid payment method', 400));
+    }
+    if (billingAddress && !validateAddress(billingAddress)) {
+      await t.rollback();
+      return next(new appError('Billing address is invalid', 400));
     }
 
-    // Calculate totals (you can add tax and shipping calculation here)
-    const tax = 0; // TODO: Implement tax calculation
-    const shippingCost = 0; // TODO: Implement shipping calculation
-    const discount = 0; // TODO: Implement discount/coupon logic
-    const totalAmount = subtotal + tax + shippingCost - discount;
+    const { subtotal, tax, shippingCost, discount, orderItems } = await buildOrderSummary(items, t);
+    const totalAmount = Number((subtotal + tax + shippingCost - discount).toFixed(2));
 
     // Generate order number
-    const orderNumber = `ORD-${Date.now()}-${req.user.id}`;
+    const orderNumber = `ORD-${Date.now()}-${req.user.id}-${Math.floor(Math.random() * 1000)}`;
 
     // Create order
     const order = await Order.create({
@@ -92,7 +144,7 @@ const createOrder = async (req, res, next) => {
       shippingCost,
       discount,
       status: 'pending',
-      paymentMethod: paymentMethod || 'credit_card',
+      paymentMethod,
       paymentStatus: 'pending',
       shippingAddress,
       billingAddress: billingAddress || shippingAddress,
@@ -105,6 +157,21 @@ const createOrder = async (req, res, next) => {
         orderId: order.id,
         ...item
       }, { transaction: t });
+    }
+
+    const userCart = await Cart.findOne({
+      where: { userId: req.user.id },
+      transaction: t
+    });
+
+    if (userCart) {
+      await CartItem.destroy({
+        where: {
+          cartId: userCart.id,
+          productId: { [Op.in]: orderItems.map(item => item.productId) }
+        },
+        transaction: t
+      });
     }
 
     // Commit transaction
@@ -220,10 +287,7 @@ const updateOrderStatus = async (req, res, next) => {
       return next(new appError('Order not found', 404));
     }
 
-    // Valid status transitions
-    const validStatuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded'];
-    
-    if (status && !validStatuses.includes(status)) {
+    if (status && !VALID_ORDER_STATUSES.includes(status)) {
       return next(new appError('Invalid order status', 400));
     }
 
@@ -249,6 +313,78 @@ const updateOrderStatus = async (req, res, next) => {
       }
     });
 
+  } catch (error) {
+    next(error);
+  }
+};
+
+const previewOrder = async (req, res, next) => {
+  const t = await sequelize.transaction();
+
+  try {
+    const { items, shippingAddress, paymentMethod } = req.body;
+
+    if (!Array.isArray(items) || items.length === 0) {
+      await t.rollback();
+      return next(new appError('Order must contain at least one item', 400));
+    }
+
+    if (shippingAddress && !validateAddress(shippingAddress)) {
+      await t.rollback();
+      return next(new appError('Shipping address is invalid', 400));
+    }
+
+    if (paymentMethod && !VALID_PAYMENT_METHODS.includes(paymentMethod)) {
+      await t.rollback();
+      return next(new appError('Invalid payment method', 400));
+    }
+
+    const summary = await buildOrderSummary(items, t);
+    await t.rollback();
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        summary: {
+          subtotal: summary.subtotal,
+          tax: summary.tax,
+          shippingCost: summary.shippingCost,
+          discount: summary.discount,
+          totalAmount: Number((summary.subtotal + summary.tax + summary.shippingCost - summary.discount).toFixed(2)),
+          itemCount: summary.orderItems.reduce((count, item) => count + item.quantity, 0),
+          items: summary.orderItems
+        }
+      }
+    });
+  } catch (error) {
+    await t.rollback();
+    next(error);
+  }
+};
+
+const getOrderSummary = async (req, res, next) => {
+  try {
+    const orders = await Order.findAll({
+      where: { userId: req.user.id }
+    });
+
+    const summary = orders.reduce((acc, order) => {
+      acc.totalOrders += 1;
+      acc.totalSpent += Number(order.totalAmount || 0);
+      acc.byStatus[order.status] = (acc.byStatus[order.status] || 0) + 1;
+      return acc;
+    }, {
+      totalOrders: 0,
+      totalSpent: 0,
+      byStatus: {}
+    });
+
+    summary.totalSpent = Number(summary.totalSpent.toFixed(2));
+
+    res.status(200).json({
+      success: true,
+      data: { summary }
+    });
   } catch (error) {
     next(error);
   }
@@ -306,8 +442,10 @@ const getAllOrders = async (req, res, next) => {
 
 module.exports = {
   createOrder,
+  previewOrder,
   getOrders,
   getOrder,
+  getOrderSummary,
   updateOrderStatus,
   getAllOrders
 };

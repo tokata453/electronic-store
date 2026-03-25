@@ -1,126 +1,201 @@
 // controllers/adminController.js
-const { Order, OrderItem, Product, User, Category } = require('../models');
+const { Order, OrderItem, Product, User, Category, sequelize } = require('../models');
 const { Op } = require('sequelize');
-const sequelize = require('../config/database');
 
-// ═══════════════════════════════════════════════════════════
-// HELPER FUNCTIONS
-// ═══════════════════════════════════════════════════════════
+const CUSTOMER_ROLE = 'customer';
 
-/**
- * Get date ranges for statistics
- */
+const toNumber = (value) => Number.parseFloat(value || 0) || 0;
+
 const getDateRanges = () => {
   const now = new Date();
-  const today = new Date(now.setHours(0, 0, 0, 0));
-  const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
-  const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
-  const yearAgo = new Date(today.getTime() - 365 * 24 * 60 * 60 * 1000);
+  const today = new Date(now);
+  today.setHours(0, 0, 0, 0);
+
+  const weekAgo = new Date(today);
+  weekAgo.setDate(weekAgo.getDate() - 7);
+
+  const monthAgo = new Date(today);
+  monthAgo.setDate(monthAgo.getDate() - 30);
+
+  const yearAgo = new Date(today);
+  yearAgo.setDate(yearAgo.getDate() - 365);
 
   return { today, weekAgo, monthAgo, yearAgo };
 };
 
-/**
- * Calculate percentage growth
- */
 const calculateGrowth = (current, previous) => {
-  if (previous === 0) return current > 0 ? 100 : 0;
-  return ((current - previous) / previous) * 100;
+  if (previous === 0) {
+    return current > 0 ? 100 : 0;
+  }
+
+  return Number((((current - previous) / previous) * 100).toFixed(1));
 };
 
-// ═══════════════════════════════════════════════════════════
-// DASHBOARD STATISTICS
-// ═══════════════════════════════════════════════════════════
+const formatDateKey = (date, groupBy = 'day') => {
+  const d = new Date(date);
+  const year = d.getUTCFullYear();
+  const month = String(d.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(d.getUTCDate()).padStart(2, '0');
 
-/**
- * Get dashboard overview statistics
- */
+  if (groupBy === 'month') {
+    return `${year}-${month}`;
+  }
+
+  if (groupBy === 'week') {
+    const temp = new Date(Date.UTC(year, d.getUTCMonth(), d.getUTCDate()));
+    const weekDay = temp.getUTCDay() || 7;
+    temp.setUTCDate(temp.getUTCDate() + 4 - weekDay);
+    const yearStart = new Date(Date.UTC(temp.getUTCFullYear(), 0, 1));
+    const weekNo = Math.ceil((((temp - yearStart) / 86400000) + 1) / 7);
+    return `${temp.getUTCFullYear()}-W${String(weekNo).padStart(2, '0')}`;
+  }
+
+  return `${year}-${month}-${day}`;
+};
+
+const fetchOrdersInRange = async (startDate, endDate) => {
+  return Order.findAll({
+    where: {
+      createdAt: { [Op.between]: [startDate, endDate] },
+      status: { [Op.notIn]: ['cancelled'] }
+    },
+    include: [
+      {
+        model: OrderItem,
+        as: 'items',
+        include: [
+          {
+            model: Product,
+            as: 'product',
+            include: [
+              {
+                model: Category,
+                as: 'category',
+                attributes: ['id', 'name']
+              }
+            ]
+          }
+        ]
+      },
+      {
+        model: User,
+        as: 'user',
+        attributes: ['id', 'firstName', 'lastName', 'email']
+      }
+    ],
+    order: [['createdAt', 'ASC']]
+  });
+};
+
 exports.getDashboardStats = async (req, res) => {
   try {
     const { today, weekAgo, monthAgo, yearAgo } = getDateRanges();
 
-    // Revenue statistics
-    const [revenueStats] = await Order.findAll({
-      attributes: [
-        [sequelize.fn('SUM', sequelize.literal('CASE WHEN "createdAt" >= \'' + today.toISOString() + '\' THEN "totalAmount" ELSE 0 END')), 'today'],
-        [sequelize.fn('SUM', sequelize.literal('CASE WHEN "createdAt" >= \'' + weekAgo.toISOString() + '\' THEN "totalAmount" ELSE 0 END')), 'week'],
-        [sequelize.fn('SUM', sequelize.literal('CASE WHEN "createdAt" >= \'' + monthAgo.toISOString() + '\' THEN "totalAmount" ELSE 0 END')), 'month'],
-        [sequelize.fn('SUM', sequelize.literal('CASE WHEN "createdAt" >= \'' + yearAgo.toISOString() + '\' THEN "totalAmount" ELSE 0 END')), 'year'],
-        [sequelize.fn('SUM', sequelize.col('totalAmount')), 'all']
-      ],
-      raw: true
+    const [
+      allActiveOrders,
+      totalProducts,
+      totalCustomers,
+      lowStockProducts,
+      pendingOrders,
+      processingOrders,
+      yesterdayRevenue,
+      lastWeekRevenue,
+      lastMonthRevenue
+    ] = await Promise.all([
+      Order.findAll({
+        where: { status: { [Op.notIn]: ['cancelled'] } },
+        attributes: ['id', 'totalAmount', 'createdAt'],
+        raw: true
+      }),
+      Product.count({ where: { isActive: true } }),
+      User.count({ where: { role: CUSTOMER_ROLE } }),
+      Product.count({ where: { stock: { [Op.lt]: 10 }, isActive: true } }),
+      Order.count({ where: { status: 'pending' } }),
+      Order.count({ where: { status: 'processing' } }),
+      Order.sum('totalAmount', {
+        where: {
+          createdAt: {
+            [Op.gte]: new Date(today.getTime() - 24 * 60 * 60 * 1000),
+            [Op.lt]: today
+          },
+          status: { [Op.notIn]: ['cancelled'] }
+        }
+      }),
+      Order.sum('totalAmount', {
+        where: {
+          createdAt: {
+            [Op.gte]: new Date(weekAgo.getTime() - 7 * 24 * 60 * 60 * 1000),
+            [Op.lt]: weekAgo
+          },
+          status: { [Op.notIn]: ['cancelled'] }
+        }
+      }),
+      Order.sum('totalAmount', {
+        where: {
+          createdAt: {
+            [Op.gte]: new Date(monthAgo.getTime() - 30 * 24 * 60 * 60 * 1000),
+            [Op.lt]: monthAgo
+          },
+          status: { [Op.notIn]: ['cancelled'] }
+        }
+      })
+    ]);
+
+    const totals = allActiveOrders.reduce((acc, order) => {
+      const createdAt = new Date(order.createdAt);
+      const totalAmount = toNumber(order.totalAmount);
+
+      acc.allRevenue += totalAmount;
+      acc.allOrders += 1;
+
+      if (createdAt >= today) {
+        acc.todayRevenue += totalAmount;
+        acc.todayOrders += 1;
+      }
+      if (createdAt >= weekAgo) {
+        acc.weekRevenue += totalAmount;
+        acc.weekOrders += 1;
+      }
+      if (createdAt >= monthAgo) {
+        acc.monthRevenue += totalAmount;
+        acc.monthOrders += 1;
+      }
+      if (createdAt >= yearAgo) {
+        acc.yearRevenue += totalAmount;
+        acc.yearOrders += 1;
+      }
+
+      return acc;
+    }, {
+      todayRevenue: 0,
+      weekRevenue: 0,
+      monthRevenue: 0,
+      yearRevenue: 0,
+      allRevenue: 0,
+      todayOrders: 0,
+      weekOrders: 0,
+      monthOrders: 0,
+      yearOrders: 0,
+      allOrders: 0
     });
-
-    // Order statistics
-    const [orderStats] = await Order.findAll({
-      attributes: [
-        [sequelize.fn('COUNT', sequelize.literal('CASE WHEN "createdAt" >= \'' + today.toISOString() + '\' THEN 1 END')), 'today'],
-        [sequelize.fn('COUNT', sequelize.literal('CASE WHEN "createdAt" >= \'' + weekAgo.toISOString() + '\' THEN 1 END')), 'week'],
-        [sequelize.fn('COUNT', sequelize.literal('CASE WHEN "createdAt" >= \'' + monthAgo.toISOString() + '\' THEN 1 END')), 'month'],
-        [sequelize.fn('COUNT', sequelize.literal('CASE WHEN "createdAt" >= \'' + yearAgo.toISOString() + '\' THEN 1 END')), 'year'],
-        [sequelize.fn('COUNT', sequelize.col('id')), 'all']
-      ],
-      raw: true
-    });
-
-    // Product and customer counts
-    const totalProducts = await Product.count({ where: { isActive: true } });
-    const totalCustomers = await User.count({ where: { role: 'user' } });
-    const lowStockProducts = await Product.count({ where: { stock: { [Op.lt]: 10 } } });
-
-    // Order status counts
-    const pendingOrders = await Order.count({ where: { status: 'pending' } });
-    const processingOrders = await Order.count({ where: { status: 'processing' } });
-
-    // Calculate growth rates
-    const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
-    const lastWeek = new Date(weekAgo.getTime() - 7 * 24 * 60 * 60 * 1000);
-    const lastMonth = new Date(monthAgo.getTime() - 30 * 24 * 60 * 60 * 1000);
-
-    const yesterdayRevenue = await Order.sum('totalAmount', {
-      where: {
-        createdAt: {
-          [Op.gte]: yesterday,
-          [Op.lt]: today
-        }
-      }
-    }) || 0;
-
-    const lastWeekRevenue = await Order.sum('totalAmount', {
-      where: {
-        createdAt: {
-          [Op.gte]: lastWeek,
-          [Op.lt]: weekAgo
-        }
-      }
-    }) || 0;
-
-    const lastMonthRevenue = await Order.sum('totalAmount', {
-      where: {
-        createdAt: {
-          [Op.gte]: lastMonth,
-          [Op.lt]: monthAgo
-        }
-      }
-    }) || 0;
 
     res.status(200).json({
       success: true,
       data: {
         stats: {
           totalRevenue: {
-            today: parseFloat(revenueStats.today) || 0,
-            week: parseFloat(revenueStats.week) || 0,
-            month: parseFloat(revenueStats.month) || 0,
-            year: parseFloat(revenueStats.year) || 0,
-            all: parseFloat(revenueStats.all) || 0
+            today: Number(totals.todayRevenue.toFixed(2)),
+            week: Number(totals.weekRevenue.toFixed(2)),
+            month: Number(totals.monthRevenue.toFixed(2)),
+            year: Number(totals.yearRevenue.toFixed(2)),
+            all: Number(totals.allRevenue.toFixed(2))
           },
           totalOrders: {
-            today: parseInt(orderStats.today) || 0,
-            week: parseInt(orderStats.week) || 0,
-            month: parseInt(orderStats.month) || 0,
-            year: parseInt(orderStats.year) || 0,
-            all: parseInt(orderStats.all) || 0
+            today: totals.todayOrders,
+            week: totals.weekOrders,
+            month: totals.monthOrders,
+            year: totals.yearOrders,
+            all: totals.allOrders
           },
           totalProducts,
           totalCustomers,
@@ -128,9 +203,9 @@ exports.getDashboardStats = async (req, res) => {
           pendingOrders,
           processingOrders,
           revenueGrowth: {
-            daily: calculateGrowth(parseFloat(revenueStats.today) || 0, yesterdayRevenue),
-            weekly: calculateGrowth(parseFloat(revenueStats.week) || 0, lastWeekRevenue),
-            monthly: calculateGrowth(parseFloat(revenueStats.month) || 0, lastMonthRevenue)
+            daily: calculateGrowth(totals.todayRevenue, toNumber(yesterdayRevenue)),
+            weekly: calculateGrowth(totals.weekRevenue, toNumber(lastWeekRevenue)),
+            monthly: calculateGrowth(totals.monthRevenue, toNumber(lastMonthRevenue))
           }
         }
       }
@@ -144,13 +219,6 @@ exports.getDashboardStats = async (req, res) => {
   }
 };
 
-// ═══════════════════════════════════════════════════════════
-// SALES REPORTS
-// ═══════════════════════════════════════════════════════════
-
-/**
- * Get sales report for date range
- */
 exports.getSalesReport = async (req, res) => {
   try {
     const { startDate, endDate, groupBy = 'day' } = req.query;
@@ -162,57 +230,44 @@ exports.getSalesReport = async (req, res) => {
       });
     }
 
-    // Determine grouping format
-    let dateFormat;
-    switch (groupBy) {
-      case 'week':
-        dateFormat = '%Y-W%V'; // Year-Week
-        break;
-      case 'month':
-        dateFormat = '%Y-%m';
-        break;
-      default:
-        dateFormat = '%Y-%m-%d';
+    const orders = await fetchOrdersInRange(new Date(startDate), new Date(endDate));
+    const grouped = new Map();
+
+    for (const order of orders) {
+      const key = formatDateKey(order.createdAt, groupBy);
+      const current = grouped.get(key) || {
+        date: key,
+        revenue: 0,
+        orders: 0
+      };
+
+      current.revenue += toNumber(order.totalAmount);
+      current.orders += 1;
+      grouped.set(key, current);
     }
 
-    const orders = await Order.findAll({
-      attributes: [
-        [sequelize.fn('DATE_FORMAT', sequelize.col('createdAt'), dateFormat), 'date'],
-        [sequelize.fn('SUM', sequelize.col('totalAmount')), 'revenue'],
-        [sequelize.fn('COUNT', sequelize.col('id')), 'orders'],
-        [sequelize.fn('AVG', sequelize.col('totalAmount')), 'averageOrderValue']
-      ],
-      where: {
-        createdAt: {
-          [Op.between]: [new Date(startDate), new Date(endDate)]
-        },
-        status: { [Op.notIn]: ['cancelled'] }
-      },
-      group: [sequelize.fn('DATE_FORMAT', sequelize.col('createdAt'), dateFormat)],
-      order: [[sequelize.fn('DATE_FORMAT', sequelize.col('createdAt'), dateFormat), 'ASC']],
-      raw: true
-    });
+    const report = Array.from(grouped.values()).map(item => ({
+      date: item.date,
+      revenue: Number(item.revenue.toFixed(2)),
+      orders: item.orders,
+      averageOrderValue: item.orders > 0 ? Number((item.revenue / item.orders).toFixed(2)) : 0
+    }));
 
-    // Calculate summary
-    const summary = orders.reduce((acc, curr) => {
-      acc.totalRevenue += parseFloat(curr.revenue);
-      acc.totalOrders += parseInt(curr.orders);
+    const summary = report.reduce((acc, item) => {
+      acc.totalRevenue += item.revenue;
+      acc.totalOrders += item.orders;
       return acc;
-    }, { totalRevenue: 0, totalOrders: 0 });
+    }, { totalRevenue: 0, totalOrders: 0, averageOrderValue: 0 });
 
-    summary.averageOrderValue = summary.totalOrders > 0 
-      ? summary.totalRevenue / summary.totalOrders 
+    summary.totalRevenue = Number(summary.totalRevenue.toFixed(2));
+    summary.averageOrderValue = summary.totalOrders > 0
+      ? Number((summary.totalRevenue / summary.totalOrders).toFixed(2))
       : 0;
 
     res.status(200).json({
       success: true,
       data: {
-        report: orders.map(order => ({
-          date: order.date,
-          revenue: parseFloat(order.revenue),
-          orders: parseInt(order.orders),
-          averageOrderValue: parseFloat(order.averageOrderValue)
-        })),
+        report,
         summary
       }
     });
@@ -225,120 +280,63 @@ exports.getSalesReport = async (req, res) => {
   }
 };
 
-// ═══════════════════════════════════════════════════════════
-// REVENUE ANALYTICS
-// ═══════════════════════════════════════════════════════════
-
-/**
- * Get revenue analytics with chart data
- */
 exports.getRevenueAnalytics = async (req, res) => {
   try {
     const { period = '30days' } = req.query;
-    
-    let startDate;
     const endDate = new Date();
-    
-    switch (period) {
-      case '7days':
-        startDate = new Date(endDate.getTime() - 7 * 24 * 60 * 60 * 1000);
-        break;
-      case '90days':
-        startDate = new Date(endDate.getTime() - 90 * 24 * 60 * 60 * 1000);
-        break;
-      case '1year':
-        startDate = new Date(endDate.getTime() - 365 * 24 * 60 * 60 * 1000);
-        break;
-      case 'all':
-        startDate = new Date(2000, 0, 1); // Beginning of time
-        break;
-      default: // 30days
-        startDate = new Date(endDate.getTime() - 30 * 24 * 60 * 60 * 1000);
+    let startDate = new Date(endDate.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+    if (period === '7days') startDate = new Date(endDate.getTime() - 7 * 24 * 60 * 60 * 1000);
+    if (period === '90days') startDate = new Date(endDate.getTime() - 90 * 24 * 60 * 60 * 1000);
+    if (period === '1year') startDate = new Date(endDate.getTime() - 365 * 24 * 60 * 60 * 1000);
+    if (period === 'all') startDate = new Date(2000, 0, 1);
+
+    const orders = await fetchOrdersInRange(startDate, endDate);
+    const chartMap = new Map();
+    const categoryMap = new Map();
+    const paymentMap = new Map();
+    let totalRevenue = 0;
+
+    for (const order of orders) {
+      const orderAmount = toNumber(order.totalAmount);
+      totalRevenue += orderAmount;
+
+      const dayKey = formatDateKey(order.createdAt, 'day');
+      const chartEntry = chartMap.get(dayKey) || { date: dayKey, revenue: 0, orders: 0 };
+      chartEntry.revenue += orderAmount;
+      chartEntry.orders += 1;
+      chartMap.set(dayKey, chartEntry);
+
+      paymentMap.set(order.paymentMethod, (paymentMap.get(order.paymentMethod) || 0) + orderAmount);
+
+      for (const item of order.items || []) {
+        const categoryName = item.product?.category?.name || 'Uncategorized';
+        categoryMap.set(categoryName, (categoryMap.get(categoryName) || 0) + toNumber(item.totalPrice));
+      }
     }
-
-    // Chart data - daily revenue
-    const chartData = await Order.findAll({
-      attributes: [
-        [sequelize.fn('DATE', sequelize.col('createdAt')), 'date'],
-        [sequelize.fn('SUM', sequelize.col('totalAmount')), 'revenue'],
-        [sequelize.fn('COUNT', sequelize.col('id')), 'orders']
-      ],
-      where: {
-        createdAt: { [Op.between]: [startDate, endDate] },
-        status: { [Op.notIn]: ['cancelled'] }
-      },
-      group: [sequelize.fn('DATE', sequelize.col('createdAt'))],
-      order: [[sequelize.fn('DATE', sequelize.col('createdAt')), 'ASC']],
-      raw: true
-    });
-
-    // Revenue by category
-    const revenueByCategory = await OrderItem.findAll({
-      attributes: [
-        [sequelize.fn('SUM', sequelize.literal('"OrderItem"."price" * "OrderItem"."quantity"')), 'revenue']
-      ],
-      include: [
-        {
-          model: Product,
-          as: 'product',
-          attributes: [],
-          include: [
-            {
-              model: Category,
-              as: 'category',
-              attributes: ['name']
-            }
-          ]
-        },
-        {
-          model: Order,
-          as: 'order',
-          attributes: [],
-          where: {
-            createdAt: { [Op.between]: [startDate, endDate] },
-            status: { [Op.notIn]: ['cancelled'] }
-          }
-        }
-      ],
-      group: ['product.category.id', 'product.category.name'],
-      order: [[sequelize.literal('revenue'), 'DESC']],
-      raw: true
-    });
-
-    const totalRevenue = revenueByCategory.reduce((sum, cat) => sum + parseFloat(cat.revenue), 0);
-
-    // Revenue by payment method
-    const revenueByPayment = await Order.findAll({
-      attributes: [
-        'paymentMethod',
-        [sequelize.fn('SUM', sequelize.col('totalAmount')), 'revenue']
-      ],
-      where: {
-        createdAt: { [Op.between]: [startDate, endDate] },
-        status: { [Op.notIn]: ['cancelled'] }
-      },
-      group: ['paymentMethod'],
-      raw: true
-    });
 
     res.status(200).json({
       success: true,
       data: {
-        chartData: chartData.map(item => ({
+        chartData: Array.from(chartMap.values()).map(item => ({
           date: item.date,
-          revenue: parseFloat(item.revenue),
-          orders: parseInt(item.orders)
+          revenue: Number(item.revenue.toFixed(2)),
+          orders: item.orders
         })),
-        revenueByCategory: revenueByCategory.map(cat => ({
-          categoryName: cat['product.category.name'],
-          revenue: parseFloat(cat.revenue),
-          percentage: totalRevenue > 0 ? ((parseFloat(cat.revenue) / totalRevenue) * 100).toFixed(1) : 0
-        })),
-        revenueByPayment: revenueByPayment.map(pay => ({
-          method: pay.paymentMethod,
-          revenue: parseFloat(pay.revenue),
-          percentage: totalRevenue > 0 ? ((parseFloat(pay.revenue) / totalRevenue) * 100).toFixed(1) : 0
-        }))
+        revenueByCategory: Array.from(categoryMap.entries())
+          .map(([categoryName, revenue]) => ({
+            categoryName,
+            revenue: Number(revenue.toFixed(2)),
+            percentage: totalRevenue > 0 ? Number(((revenue / totalRevenue) * 100).toFixed(1)) : 0
+          }))
+          .sort((a, b) => b.revenue - a.revenue),
+        revenueByPayment: Array.from(paymentMap.entries())
+          .map(([method, revenue]) => ({
+            method,
+            revenue: Number(revenue.toFixed(2)),
+            percentage: totalRevenue > 0 ? Number(((revenue / totalRevenue) * 100).toFixed(1)) : 0
+          }))
+          .sort((a, b) => b.revenue - a.revenue)
       }
     });
   } catch (error) {
@@ -350,24 +348,12 @@ exports.getRevenueAnalytics = async (req, res) => {
   }
 };
 
-// ═══════════════════════════════════════════════════════════
-// PRODUCT ANALYTICS
-// ═══════════════════════════════════════════════════════════
-
-/**
- * Get top selling products
- */
 exports.getTopProducts = async (req, res) => {
   try {
-    const { limit = 10, sortBy = 'revenue' } = req.query;
+    const limit = Math.min(Math.max(Number.parseInt(req.query.limit, 10) || 10, 1), 50);
+    const sortBy = req.query.sortBy === 'quantity' ? 'quantity' : 'revenue';
 
-    const topProducts = await OrderItem.findAll({
-      attributes: [
-        'productId',
-        [sequelize.fn('SUM', sequelize.col('quantity')), 'totalSold'],
-        [sequelize.fn('SUM', sequelize.literal('"OrderItem"."price" * "OrderItem"."quantity"')), 'totalRevenue'],
-        [sequelize.fn('AVG', sequelize.col('OrderItem.price')), 'averagePrice']
-      ],
+    const items = await OrderItem.findAll({
       include: [
         {
           model: Product,
@@ -380,28 +366,55 @@ exports.getTopProducts = async (req, res) => {
               attributes: ['name']
             }
           ]
+        },
+        {
+          model: Order,
+          as: 'order',
+          attributes: [],
+          where: { status: { [Op.notIn]: ['cancelled'] } }
         }
-      ],
-      group: ['productId', 'product.id', 'product.category.id'],
-      order: [[sequelize.literal(sortBy === 'quantity' ? 'totalSold' : 'totalRevenue'), 'DESC']],
-      limit: parseInt(limit),
-      raw: true,
-      nest: true
+      ]
     });
+
+    const productMap = new Map();
+
+    for (const item of items) {
+      if (!item.product) continue;
+
+      const entry = productMap.get(item.productId) || {
+        id: item.product.id,
+        name: item.product.name,
+        image: Array.isArray(item.product.images) ? item.product.images[0] || null : null,
+        totalSold: 0,
+        totalRevenue: 0,
+        averagePrice: 0,
+        orderLines: 0,
+        category: item.product.category?.name || null
+      };
+
+      entry.totalSold += item.quantity;
+      entry.totalRevenue += toNumber(item.totalPrice);
+      entry.averagePrice += toNumber(item.price);
+      entry.orderLines += 1;
+      productMap.set(item.productId, entry);
+    }
+
+    const topProducts = Array.from(productMap.values())
+      .map(item => ({
+        id: item.id,
+        name: item.name,
+        image: item.image,
+        totalSold: item.totalSold,
+        totalRevenue: Number(item.totalRevenue.toFixed(2)),
+        averagePrice: item.orderLines > 0 ? Number((item.averagePrice / item.orderLines).toFixed(2)) : 0,
+        category: item.category
+      }))
+      .sort((a, b) => sortBy === 'quantity' ? b.totalSold - a.totalSold : b.totalRevenue - a.totalRevenue)
+      .slice(0, limit);
 
     res.status(200).json({
       success: true,
-      data: {
-        topProducts: topProducts.map(item => ({
-          id: item.product.id,
-          name: item.product.name,
-          image: item.product.images?.[0] || null,
-          totalSold: parseInt(item.totalSold),
-          totalRevenue: parseFloat(item.totalRevenue),
-          averagePrice: parseFloat(item.averagePrice),
-          category: item.product.category.name
-        }))
-      }
+      data: { topProducts }
     });
   } catch (error) {
     console.error('Get top products error:', error);
@@ -412,16 +425,13 @@ exports.getTopProducts = async (req, res) => {
   }
 };
 
-/**
- * Get low stock products
- */
 exports.getLowStockProducts = async (req, res) => {
   try {
-    const { threshold = 10 } = req.query;
+    const threshold = Math.max(Number.parseInt(req.query.threshold, 10) || 10, 0);
 
     const lowStockProducts = await Product.findAll({
       where: {
-        stock: { [Op.lt]: parseInt(threshold) },
+        stock: { [Op.lt]: threshold },
         isActive: true
       },
       include: [
@@ -440,8 +450,8 @@ exports.getLowStockProducts = async (req, res) => {
       name: product.name,
       sku: product.sku,
       stock: product.stock,
-      category: product.category.name,
-      price: parseFloat(product.price),
+      category: product.category?.name || null,
+      price: toNumber(product.price),
       status: product.stock === 0 ? 'out_of_stock' : product.stock < 5 ? 'critical' : 'low'
     }));
 
@@ -461,16 +471,9 @@ exports.getLowStockProducts = async (req, res) => {
   }
 };
 
-// ═══════════════════════════════════════════════════════════
-// ORDER ANALYTICS
-// ═══════════════════════════════════════════════════════════
-
-/**
- * Get recent orders
- */
 exports.getRecentOrders = async (req, res) => {
   try {
-    const { limit = 10 } = req.query;
+    const limit = Math.min(Math.max(Number.parseInt(req.query.limit, 10) || 10, 1), 50);
 
     const orders = await Order.findAll({
       include: [
@@ -486,19 +489,19 @@ exports.getRecentOrders = async (req, res) => {
         }
       ],
       order: [['createdAt', 'DESC']],
-      limit: parseInt(limit)
+      limit
     });
 
     const formattedOrders = orders.map(order => ({
       id: order.id,
       orderNumber: order.orderNumber,
       customer: {
-        name: `${order.user.firstName} ${order.user.lastName}`,
-        email: order.user.email
+        name: order.user ? `${order.user.firstName} ${order.user.lastName}`.trim() : 'Unknown Customer',
+        email: order.user?.email || null
       },
-      totalAmount: parseFloat(order.totalAmount),
+      totalAmount: toNumber(order.totalAmount),
       status: order.status,
-      itemCount: order.items.reduce((sum, item) => sum + item.quantity, 0),
+      itemCount: (order.items || []).reduce((sum, item) => sum + item.quantity, 0),
       createdAt: order.createdAt
     }));
 
@@ -515,80 +518,73 @@ exports.getRecentOrders = async (req, res) => {
   }
 };
 
-// ═══════════════════════════════════════════════════════════
-// CUSTOMER ANALYTICS
-// ═══════════════════════════════════════════════════════════
-
-/**
- * Get customer statistics
- */
 exports.getCustomerStats = async (req, res) => {
   try {
-    const totalCustomers = await User.count({ where: { role: 'user' } });
-    
     const monthAgo = new Date();
     monthAgo.setMonth(monthAgo.getMonth() - 1);
-    
-    const newCustomersThisMonth = await User.count({
-      where: {
-        role: 'user',
-        createdAt: { [Op.gte]: monthAgo }
-      }
-    });
 
-    // Customers with at least one order
-    const activeCustomers = await User.count({
-      where: { role: 'user' },
-      include: [
-        {
-          model: Order,
-          as: 'orders',
-          required: true
+    const [totalCustomers, newCustomersThisMonth, activeCustomerRows, topCustomers] = await Promise.all([
+      User.count({ where: { role: CUSTOMER_ROLE } }),
+      User.count({
+        where: {
+          role: CUSTOMER_ROLE,
+          createdAt: { [Op.gte]: monthAgo }
         }
-      ],
-      distinct: true
-    });
-
-    // Top customers
-    const topCustomers = await User.findAll({
-      where: { role: 'user' },
-      attributes: [
-        'id',
-        'firstName',
-        'lastName',
-        'email',
-        [sequelize.fn('COUNT', sequelize.col('orders.id')), 'totalOrders'],
-        [sequelize.fn('SUM', sequelize.col('orders.totalAmount')), 'totalSpent'],
-        [sequelize.fn('AVG', sequelize.col('orders.totalAmount')), 'averageOrderValue'],
-        [sequelize.fn('MAX', sequelize.col('orders.createdAt')), 'lastOrderDate']
-      ],
-      include: [
-        {
-          model: Order,
-          as: 'orders',
-          attributes: [],
-          where: { status: { [Op.notIn]: ['cancelled'] } }
-        }
-      ],
-      group: ['User.id'],
-      order: [[sequelize.literal('totalSpent'), 'DESC']],
-      limit: 10,
-      raw: true
-    });
+      }),
+      User.findAll({
+        where: { role: CUSTOMER_ROLE },
+        include: [
+          {
+            model: Order,
+            as: 'orders',
+            attributes: ['id'],
+            required: true
+          }
+        ],
+        attributes: ['id'],
+        raw: true
+      }),
+      User.findAll({
+        where: { role: CUSTOMER_ROLE },
+        attributes: [
+          'id',
+          'firstName',
+          'lastName',
+          'email',
+          [sequelize.fn('COUNT', sequelize.col('orders.id')), 'totalOrders'],
+          [sequelize.fn('SUM', sequelize.col('orders.totalAmount')), 'totalSpent'],
+          [sequelize.fn('AVG', sequelize.col('orders.totalAmount')), 'averageOrderValue'],
+          [sequelize.fn('MAX', sequelize.col('orders.createdAt')), 'lastOrderDate']
+        ],
+        include: [
+          {
+            model: Order,
+            as: 'orders',
+            attributes: [],
+            where: { status: { [Op.notIn]: ['cancelled'] } },
+            required: true
+          }
+        ],
+        group: ['User.id'],
+        order: [[sequelize.literal('"totalSpent"'), 'DESC']],
+        limit: 10,
+        raw: true
+      })
+    ]);
 
     res.status(200).json({
       success: true,
       data: {
         totalCustomers,
         newCustomersThisMonth,
-        activeCustomers,
+        activeCustomers: new Set(activeCustomerRows.map(row => row.id)).size,
         topCustomers: topCustomers.map(customer => ({
           id: customer.id,
-          name: `${customer.firstName} ${customer.lastName}`,
+          name: `${customer.firstName} ${customer.lastName}`.trim(),
           email: customer.email,
-          totalOrders: parseInt(customer.totalOrders),
-          totalSpent: parseFloat(customer.totalSpent),
-          averageOrderValue: parseFloat(customer.averageOrderValue),
+          totalOrders: Number.parseInt(customer.totalOrders, 10) || 0,
+          totalSpent: toNumber(customer.totalSpent),
+          averageOrderValue: toNumber(customer.averageOrderValue),
           lastOrderDate: customer.lastOrderDate
         }))
       }
@@ -602,13 +598,6 @@ exports.getCustomerStats = async (req, res) => {
   }
 };
 
-// ═══════════════════════════════════════════════════════════
-// EXPORT FUNCTIONALITY
-// ═══════════════════════════════════════════════════════════
-
-/**
- * Export sales report
- */
 exports.exportSalesReport = async (req, res) => {
   try {
     const { startDate, endDate, format = 'csv' } = req.query;
@@ -620,56 +609,29 @@ exports.exportSalesReport = async (req, res) => {
       });
     }
 
-    const orders = await Order.findAll({
-      where: {
-        createdAt: {
-          [Op.between]: [new Date(startDate), new Date(endDate)]
-        }
-      },
-      include: [
-        {
-          model: User,
-          as: 'user',
-          attributes: ['firstName', 'lastName', 'email']
-        },
-        {
-          model: OrderItem,
-          as: 'items',
-          include: [
-            {
-              model: Product,
-              as: 'product',
-              attributes: ['name']
-            }
-          ]
-        }
-      ],
-      order: [['createdAt', 'DESC']]
-    });
+    const orders = await fetchOrdersInRange(new Date(startDate), new Date(endDate));
 
     if (format === 'csv') {
-      // Generate CSV
       let csv = 'Order Number,Date,Customer,Email,Total Amount,Status,Items\n';
-      
-      orders.forEach(order => {
-        const customerName = `${order.user.firstName} ${order.user.lastName}`;
-        const itemsList = order.items.map(item => 
-          `${item.product.name} (${item.quantity})`
-        ).join('; ');
-        
-        csv += `${order.orderNumber},${order.createdAt.toISOString()},${customerName},${order.user.email},${order.totalAmount},${order.status},"${itemsList}"\n`;
-      });
+
+      for (const order of orders) {
+        const customerName = order.user ? `${order.user.firstName} ${order.user.lastName}`.trim() : 'Unknown Customer';
+        const itemsList = (order.items || [])
+          .map(item => `${item.productName} (${item.quantity})`)
+          .join('; ');
+
+        csv += `${order.orderNumber},${order.createdAt.toISOString()},${customerName},${order.user?.email || ''},${order.totalAmount},${order.status},"${itemsList}"\n`;
+      }
 
       res.setHeader('Content-Type', 'text/csv');
       res.setHeader('Content-Disposition', `attachment; filename=sales-report-${startDate}-to-${endDate}.csv`);
-      res.send(csv);
-    } else {
-      // Return JSON for client-side processing
-      res.status(200).json({
-        success: true,
-        data: { orders }
-      });
+      return res.send(csv);
     }
+
+    res.status(200).json({
+      success: true,
+      data: { orders }
+    });
   } catch (error) {
     console.error('Export sales report error:', error);
     res.status(500).json({

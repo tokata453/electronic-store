@@ -12,14 +12,19 @@ const passport = require('../config/passport');
 const register = async (req, res, next) => {
   try {
     const { firstName, lastName, email, password, phone } = req.body;
+    const normalizedEmail = email?.trim().toLowerCase();
 
     // Validate required fields
-    if (!firstName || !lastName || !email || !password) {
+    if (!firstName || !lastName || !normalizedEmail || !password) {
       return next(new AppError('Please provide all required fields', 400));      
     }
 
+    if (password.length < 6) {
+      return next(new AppError('Password must be at least 6 characters', 400));
+    }
+
     // Check if user already exists
-    const existingUser = await User.findOne({ where: { email } });
+    const existingUser = await User.findOne({ where: { email: normalizedEmail } });
     if (existingUser) {
       return next(new AppError('Email already registered', 400));
     }
@@ -28,7 +33,7 @@ const register = async (req, res, next) => {
     const user = await User.create({
       firstName,
       lastName,
-      email,
+      email: normalizedEmail,
       password, // Will be hashed by model hook
       phone,
       role: 'customer' // Default role
@@ -65,14 +70,15 @@ const register = async (req, res, next) => {
 const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
+    const normalizedEmail = email?.trim().toLowerCase();
 
     // Validate required fields
-    if (!email || !password) {
+    if (!normalizedEmail || !password) {
       return next(new AppError('Please provide email and password', 400));
     }
 
     // Find user by email (include password for comparison)
-    const user = await User.findOne({ where: { email } });
+    const user = await User.findOne({ where: { email: normalizedEmail } });
 
     if (!user) {
       return next(new AppError('Invalid credentials', 401));
@@ -134,7 +140,7 @@ const getMe = async (req, res, next) => {
 
 const googleCallbackHandler = (req, res) => {
   try {
-    const token = generateToken({ id: req.user.id, email: req.user.email, role: req.user.Role?.name });
+    const token = generateToken({ id: req.user.id, email: req.user.email, role: req.user.role });
     res.redirect(`${process.env.CLIENT_URL}/auth/callback?token=${token}`);
   } catch (err) {
     res.redirect(`${process.env.CLIENT_URL}/auth/error`);
@@ -143,7 +149,7 @@ const googleCallbackHandler = (req, res) => {
 
 const facebookCallbackHandler = (req, res) => {
   try {
-    const token = generateToken({ id: req.user.id, email: req.user.email, role: req.user.Role?.name });
+    const token = generateToken({ id: req.user.id, email: req.user.email, role: req.user.role });
     res.redirect(`${process.env.CLIENT_URL}/auth/callback?token=${token}`);
   } catch (err) {
     res.redirect(`${process.env.CLIENT_URL}/auth/error`);

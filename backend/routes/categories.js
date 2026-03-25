@@ -4,6 +4,7 @@ const router = express.Router();
 const {
   getCategories,
   getCategory,
+  getCategoryBySlug,
   createCategory,
   updateCategory,
   deleteCategory
@@ -33,6 +34,8 @@ const { admin } = require('../middleware/admin');
  *          });
  */
 router.get('/', getCategories);
+
+router.get('/slug/:slug', getCategoryBySlug);
 
 /**
  * @route   GET /api/categories/:id

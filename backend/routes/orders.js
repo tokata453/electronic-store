@@ -3,8 +3,10 @@ const express = require('express');
 const router = express.Router();
 const {
   createOrder,
+  previewOrder,
   getOrders,
   getOrder,
+  getOrderSummary,
   updateOrderStatus,
   getAllOrders
 } = require('../controllers/orderController');
@@ -30,6 +32,10 @@ const { admin } = require('../middleware/admin');
     });
  */
 router.get('/admin/all', protect, admin, getAllOrders);
+
+router.get('/summary', protect, getOrderSummary);
+
+router.post('/preview', protect, previewOrder);
 
 /**
  * @route   POST /api/orders
