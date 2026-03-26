@@ -1,37 +1,6 @@
-// src/admin/products/api.js
+import api from '../../services/api.js';
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL;
-
-function getToken() {
-  return localStorage.getItem("token");
-}
-
-async function request(path, options = {}) {
-  const token = getToken();
-  console.log("FETCH ABOUT TO RUN:", `${API_BASE}${path}`);
-  const res = await fetch(`${API_BASE}${path}`, {
-    ...options,
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(options.headers || {}),
-    },
-  });
-
-  const data = await res.json().catch(() => null);
-
-  if (!res.ok || (data && data.success === false)) {
-    const msg =
-      data?.error?.message ||
-      data?.message ||
-      `Request failed (${res.status})`;
-    throw new Error(msg);
-  }
-
-  return data;
-}
-
-// ─── Products ────────────────────────────────────────────────────────────────
+// ─── Products ────────────────────────────────────────────────
 
 export async function listProducts({
   search = "",
@@ -45,48 +14,44 @@ export async function listProducts({
   page = 1,
   limit = 20,
 } = {}) {
-  const params = new URLSearchParams();
-  if (search) params.set("search", search);
-  if (categoryId) params.set("categoryId", String(categoryId));
-  if (minPrice != null) params.set("minPrice", String(minPrice));
-  if (maxPrice != null) params.set("maxPrice", String(maxPrice));
-  if (badge) params.set("badge", badge);
-  if (isFeatured != null) params.set("isFeatured", String(isFeatured));
-  if (sortBy) params.set("sortBy", sortBy);
-  if (order) params.set("order", order);
-  params.set("page", String(page));
-  params.set("limit", String(limit));
+  const params = {
+    search,
+    categoryId,
+    minPrice,
+    maxPrice,
+    badge,
+    isFeatured,
+    sortBy,
+    order,
+    page,
+    limit,
+  };
 
-  const res = await request(`/api/products?${params.toString()}`);
+  const res = await api.get('/api/products', { params });
+
   return {
-    products: res.data?.products ?? [],
-    pagination: res.data?.pagination ?? null,
+    products: res.data?.data?.products ?? [],
+    pagination: res.data?.data?.pagination ?? null,
   };
 }
 
 export async function getProduct(id) {
-  const res = await request(`/api/products/${id}`);
-  return res.data?.product;
+  const res = await api.get(`/api/products/${id}`);
+  return res.data?.data?.product;
 }
 
 export async function createProduct(product) {
-  const res = await request(`/api/products`, {
-    method: "POST",
-    body: JSON.stringify(product),
-  });
-  return res.data?.product ?? res.data;
+  const res = await api.post(`/api/products`, product);
+  return res.data?.data?.product ?? res.data?.data;
 }
 
 export async function updateProduct(id, product) {
-  const res = await request(`/api/products/${id}`, {
-    method: "PUT",
-    body: JSON.stringify(product),
-  });
-  return res.data?.product ?? res.data;
+  const res = await api.put(`/api/products/${id}`, product);
+  return res.data?.data?.product ?? res.data?.data;
 }
 
 export async function deleteProduct(id) {
-  await request(`/api/products/${id}`, { method: "DELETE" });
+  await api.delete(`/api/products/${id}`);
   return true;
 }
 
@@ -94,60 +59,44 @@ export async function uploadProductImage(id, file) {
   const formData = new FormData();
   formData.append("images", file);
 
-  const token = getToken();
-
-  const res = await fetch(`${API_BASE}/api/upload/product/${id}`, {
-    method: "POST",
+  const res = await api.post(`/api/upload/product/${id}`, formData, {
     headers: {
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      "Content-Type": "multipart/form-data",
     },
-    body: formData,
   });
 
-  const json = await res.json();
-
-  if (!res.ok) {
-    throw new Error(json?.message || "Upload failed");
-  }
-
   return {
-    keys: json?.data?.keys ?? [],
-    uploadedUrls: json?.data?.uploadedUrls ?? [],
-    allImages: json?.data?.allImages ?? [],
-    product: json?.data?.product ?? null,
+    keys: res.data?.data?.keys ?? [],
+    uploadedUrls: res.data?.data?.uploadedUrls ?? [],
+    allImages: res.data?.data?.allImages ?? [],
+    product: res.data?.data?.product ?? null,
   };
 }
 
-// ─── Categories ──────────────────────────────────────────────────────────────
+// ─── Categories ──────────────────────────────────────────────
 
 export async function listCategories() {
-  const res = await request(`/api/categories`);
-  return res.data?.categories ?? res.data ?? [];
+  const res = await api.get(`/api/categories`);
+  return res.data?.data?.categories ?? res.data?.data ?? [];
 }
 
 export async function getCategory(id) {
-  const res = await request(`/api/categories/${id}`);
-  return res.data?.category ?? res.data;
+  const res = await api.get(`/api/categories/${id}`);
+  return res.data?.data?.category ?? res.data?.data;
 }
 
 export async function createCategory(category) {
-  const res = await request(`/api/categories`, {
-    method: "POST",
-    body: JSON.stringify(category),
-  });
-  return res.data?.category ?? res.data;
+  const res = await api.post(`/api/categories`, category);
+  return res.data?.data?.category ?? res.data?.data;
 }
 
 export async function updateCategory(id, category) {
-  const res = await request(`/api/categories/${id}`, {
-    method: "PUT",
-    body: JSON.stringify(category),
-  });
-  return res.data?.category ?? res.data;
+  const res = await api.put(`/api/categories/${id}`, category);
+  return res.data?.data?.category ?? res.data?.data;
 }
 
 export async function deleteCategory(id) {
-  await request(`/api/categories/${id}`, { method: "DELETE" });
+  await api.delete(`/api/categories/${id}`);
   return true;
 }
 
@@ -155,25 +104,15 @@ export async function uploadCategoryImage(id, file) {
   const formData = new FormData();
   formData.append("image", file);
 
-  const token = getToken();
-
-  const res = await fetch(`${API_BASE}/api/upload/category/${id}`, {
-    method: "POST",
+  const res = await api.post(`/api/upload/category/${id}`, formData, {
     headers: {
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      "Content-Type": "multipart/form-data",
     },
-    body: formData,
   });
 
-  const json = await res.json();
-
-  if (!res.ok) {
-    throw new Error(json?.message || "Upload failed");
-  }
-
   return {
-    key: json?.data?.key ?? null,
-    imageUrl: json?.data?.imageUrl ?? null,
-    category: json?.data?.category ?? null,
+    key: res.data?.data?.key ?? null,
+    imageUrl: res.data?.data?.imageUrl ?? null,
+    category: res.data?.data?.category ?? null,
   };
 }
