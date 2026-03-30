@@ -10,7 +10,6 @@ export default function MainLayout() {
     <div className="flex min-h-screen flex-col">
       {/* The Navbar stays permanently at the top */}
       <TopHeaderBar />
-      <MiddleBar />
       <Navbar />
 
       <main className="flex-1">

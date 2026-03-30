@@ -1,11 +1,8 @@
 import { useState } from "react";
-// 1. Import useNavigate and Link for routing
 import { useNavigate, Link } from "react-router-dom"; 
 import { FcGoogle } from "react-icons/fc";
 import { FaFacebook } from "react-icons/fa";
 import { FiEye, FiEyeOff, FiAlertCircle } from "react-icons/fi";
-
-// 2. Import your auth service
 import { authService } from "@/services/authentication"; 
 
 export default function Register() {
@@ -14,7 +11,6 @@ export default function Register() {
   const [focused, setFocused] = useState(null);
   const [touched, setTouched] = useState({});
   
-  // 3. Add state for API handling
   const [apiError, setApiError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
@@ -26,7 +22,6 @@ export default function Register() {
     setTouched((prev) => ({ ...prev, [name]: true }));
   };
 
-  // Validation logic
   const errors = {
     firstName: touched.firstName && !form.firstName ? "Please input your first name" : "",
     lastName: touched.lastName && !form.lastName ? "Please input your last name" : "",
@@ -39,30 +34,27 @@ export default function Register() {
         : "",
   };
 
+  // Updated to match the Digital Curator input styling
   const inputClass = (name) => {
     const hasError = !!errors[name];
     const isFocused = focused === name;
-    return `w-full px-4 py-3 rounded-xl text-sm text-slate-800 border outline-none transition-all duration-200 ${
+    return `w-full px-4 h-12 rounded-lg text-[15px] text-[#191c1d] border outline-none transition-all duration-200 placeholder:text-[#191c1d]/40 ${
       hasError
-        ? "border-red-400 bg-red-50"
+        ? "border-[#ffcdd2] bg-[#ffebee]"
         : isFocused
-        ? "border-sky-400 bg-sky-50"
-        : "border-slate-200 bg-white"
+        ? "border-[#003d9b]/30 bg-white shadow-[0_0_0_4px_rgba(0,61,155,0.05)]"
+        : "border-transparent bg-[#f3f4f5]"
     }`;
   };
 
-  // 4. Handle Form Submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Check if there are any frontend validation errors before sending to API
     if (errors.firstName || errors.lastName || errors.email || errors.password) {
-      // Force all fields to show touched so the user sees the red outlines
       setTouched({ firstName: true, lastName: true, email: true, password: true });
       return; 
     }
 
-    // Double check that fields aren't completely empty
     if (!form.firstName || !form.lastName || !form.email || !form.password) {
       setApiError("Please fill out all fields.");
       return;
@@ -72,19 +64,17 @@ export default function Register() {
     setApiError("");
 
     try {
-      // Pack the data to match your API requirements
       const userData = {
         firstName: form.firstName,
         lastName: form.lastName,
         email: form.email,
         password: form.password,
-        phone: "+855000000000" // Temporary placeholder until you add a phone input to the UI
+        phone: "+855000000000" 
       };
 
       const result = await authService.register(userData);
 
       if (result.success) {
-        // Save the token/user and redirect to the home page
         localStorage.setItem("token", result.data.token);
         localStorage.setItem("user", JSON.stringify(result.data.user));
         navigate("/");
@@ -99,29 +89,26 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-sky-100 via-blue-50 to-sky-100 p-5 font-sans w-full">
-      <div className="bg-white rounded-2xl shadow-xl p-10 w-full max-w-lg">
+    <div className="flex items-center justify-center min-h-[85vh] bg-[#f8f9fa] p-5 font-sans w-full">
+      <div className="bg-white rounded-2xl shadow-[0_20px_40px_rgba(25,28,29,0.06)] p-10 w-full max-w-lg">
 
-        {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-slate-900 mb-2">Create an Account</h1>
-          <p className="text-slate-500 text-sm">Please sign up below to create an account.</p>
+          <h1 className="text-2xl font-bold text-[#003d9b] tracking-tight mb-2">Create an Account</h1>
+          <p className="text-[#191c1d]/60 text-sm">Please sign up below to join the gallery.</p>
         </div>
 
-        {/* Display API Errors */}
         {apiError && (
-          <div className="mb-5 p-3 rounded-xl bg-red-50 border border-red-200 text-red-500 text-sm text-center">
+          <div className="mb-5 p-3 rounded-lg bg-[#ffebee] border border-[#ffcdd2] text-[#d32f2f] text-sm text-center font-medium">
             {apiError}
           </div>
         )}
 
-        {/* 5. Wrap the inputs in a form and attach handleSubmit */}
         <form onSubmit={handleSubmit}>
-          {/* Name Row */}
-          <div className="flex gap-3 mb-5">
+          
+          <div className="flex gap-4 mb-5">
             <div className="flex-1">
-              <label className="block text-sm font-semibold text-slate-700 mb-1.5">
-                First Name <span className="text-red-500">*</span>
+              <label className="block text-sm font-medium text-[#191c1d] mb-1.5">
+                First Name <span className="text-[#d32f2f]">*</span>
               </label>
               <div className="relative">
                 <input
@@ -135,16 +122,17 @@ export default function Register() {
                   className={`${inputClass("firstName")} ${errors.firstName ? "pr-10" : ""}`}
                 />
                 {errors.firstName && (
-                  <FiAlertCircle className="absolute right-3 top-1/2 -translate-y-1/2 text-red-400" size={18} />
+                  <FiAlertCircle className="absolute right-3 top-1/2 -translate-y-1/2 text-[#d32f2f]" size={18} />
                 )}
               </div>
               {errors.firstName && (
-                <p className="text-red-500 text-xs mt-1.5">{errors.firstName}</p>
+                <p className="text-[#d32f2f] text-xs mt-1.5 font-medium">{errors.firstName}</p>
               )}
             </div>
+            
             <div className="flex-1">
-              <label className="block text-sm font-semibold text-slate-700 mb-1.5">
-                Last Name <span className="text-red-500">*</span>
+              <label className="block text-sm font-medium text-[#191c1d] mb-1.5">
+                Last Name <span className="text-[#d32f2f]">*</span>
               </label>
               <div className="relative">
                 <input
@@ -158,19 +146,18 @@ export default function Register() {
                   className={`${inputClass("lastName")} ${errors.lastName ? "pr-10" : ""}`}
                 />
                 {errors.lastName && (
-                  <FiAlertCircle className="absolute right-3 top-1/2 -translate-y-1/2 text-red-400" size={18} />
+                  <FiAlertCircle className="absolute right-3 top-1/2 -translate-y-1/2 text-[#d32f2f]" size={18} />
                 )}
               </div>
               {errors.lastName && (
-                <p className="text-red-500 text-xs mt-1.5">{errors.lastName}</p>
+                <p className="text-[#d32f2f] text-xs mt-1.5 font-medium">{errors.lastName}</p>
               )}
             </div>
           </div>
 
-          {/* Email */}
           <div className="mb-5">
-            <label className="block text-sm font-semibold text-slate-700 mb-1.5">
-              Email <span className="text-red-500">*</span>
+            <label className="block text-sm font-medium text-[#191c1d] mb-1.5">
+              Email <span className="text-[#d32f2f]">*</span>
             </label>
             <div className="relative">
               <input
@@ -180,23 +167,22 @@ export default function Register() {
                 onChange={handle}
                 onFocus={() => setFocused("email")}
                 onBlur={() => handleBlur("email")}
-                placeholder="Enter email address"
+                placeholder="name@example.com"
                 disabled={isLoading}
                 className={`${inputClass("email")} ${errors.email ? "pr-10" : ""}`}
               />
               {errors.email && (
-                <FiAlertCircle className="absolute right-3 top-1/2 -translate-y-1/2 text-red-400" size={18} />
+                <FiAlertCircle className="absolute right-3 top-1/2 -translate-y-1/2 text-[#d32f2f]" size={18} />
               )}
             </div>
             {errors.email && (
-              <p className="text-red-500 text-xs mt-1.5">{errors.email}</p>
+              <p className="text-[#d32f2f] text-xs mt-1.5 font-medium">{errors.email}</p>
             )}
           </div>
 
-          {/* Password */}
           <div className="mb-5">
-            <label className="block text-sm font-semibold text-slate-700 mb-1.5">
-              Password <span className="text-red-500">*</span>
+            <label className="block text-sm font-medium text-[#191c1d] mb-1.5">
+              Password <span className="text-[#d32f2f]">*</span>
             </label>
             <div className="relative">
               <input
@@ -206,75 +192,76 @@ export default function Register() {
                 onChange={handle}
                 onFocus={() => setFocused("password")}
                 onBlur={() => handleBlur("password")}
-                placeholder="Enter password"
+                placeholder="••••••••"
                 disabled={isLoading}
                 className={`${inputClass("password")} ${errors.password ? "pr-16" : "pr-12"}`}
               />
               {errors.password && (
-                <FiAlertCircle className="absolute right-9 top-1/2 -translate-y-1/2 text-red-400" size={18} />
+                <FiAlertCircle className="absolute right-10 top-1/2 -translate-y-1/2 text-[#d32f2f]" size={18} />
               )}
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#191c1d]/40 hover:text-[#191c1d]/80 transition-colors"
               >
                 {showPassword ? <FiEye size={20} /> : <FiEyeOff size={20} />}
               </button>
             </div>
             {errors.password && (
-              <p className="text-red-500 text-xs mt-1.5">{errors.password}</p>
+              <p className="text-[#d32f2f] text-xs mt-1.5 font-medium">{errors.password}</p>
             )}
           </div>
 
-          {/* Terms */}
-          <p className="text-xs text-slate-500 mb-5 leading-relaxed">
-            By signing up I agree to Electronic Store's{" "}
-            <a href="#" className="text-sky-500 font-medium hover:underline">Privacy Policy</a>{" "}
+          <p className="text-[13px] text-[#191c1d]/60 mb-6 leading-relaxed">
+            By signing up I agree to the {" "}
+            <a href="#" className="text-[#003d9b] font-medium hover:underline">Privacy Policy</a>{" "}
             and{" "}
-            <a href="#" className="text-sky-500 font-medium hover:underline">Terms & Conditions</a>
+            <a href="#" className="text-[#003d9b] font-medium hover:underline">Terms & Conditions</a>
           </p>
 
-          {/* Sign up button */}
           <button 
             type="submit" 
             disabled={isLoading}
-            className="w-full py-3.5 rounded-xl bg-linear-to-r from-sky-400 to-blue-500 text-white font-semibold text-base tracking-wide hover:opacity-90 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 mb-5 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full h-12 rounded-lg bg-[#003d9b] hover:bg-[#003d9b]/90 text-white font-medium text-[15px] shadow-[0_10px_20px_rgba(0,61,155,0.15)] transition-all mb-6 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isLoading ? "Creating Account..." : "Sign up"}
+            {isLoading ? "Creating Account..." : "Create Account"}
           </button>
         </form>
 
         {/* Divider */}
-        <div className="flex items-center gap-3 text-slate-400 text-xs mb-4">
-          <div className="flex-1 h-px bg-slate-200" />
-          or sign up with
-          <div className="flex-1 h-px bg-slate-200" />
+        <div className="relative my-6">
+          <div className="absolute inset-0 flex items-center">
+            <span className="w-full border-t border-[#191c1d]/10" />
+          </div>
+          <div className="relative flex justify-center text-[10px] font-bold tracking-[0.05em] uppercase">
+            <span className="bg-white px-4 text-[#191c1d]/40">
+              Or sign up with
+            </span>
+          </div>
         </div>
 
-        {/* 6. Attach OAuth logic to Social buttons */}
-        <div className="flex gap-3 mb-6">
+        <div className="grid grid-cols-2 gap-3 mb-6">
           <button 
             type="button" 
             onClick={() => authService.loginWithGoogle()}
             disabled={isLoading}
-            className="flex-1 flex items-center justify-center gap-2.5 border border-slate-200 rounded-xl py-3 text-sm font-semibold text-slate-700 bg-white hover:border-sky-400 hover:bg-sky-50 hover:shadow-md transition-all duration-200 disabled:opacity-50"
+            className="h-11 flex items-center justify-center bg-transparent border border-[#191c1d]/15 hover:bg-[#f3f4f5] text-[#191c1d] text-[15px] font-medium rounded-lg transition-all disabled:opacity-50"
           >
-            <FcGoogle size={20} /> Google
+            <FcGoogle size={18} className="mr-2" /> Google
           </button>
           <button 
             type="button"
             onClick={() => authService.loginWithFacebook()}
             disabled={isLoading} 
-            className="flex-1 flex items-center justify-center gap-2.5 border border-slate-200 rounded-xl py-3 text-sm font-semibold text-slate-700 bg-white hover:border-sky-400 hover:bg-sky-50 hover:shadow-md transition-all duration-200 disabled:opacity-50"
+            className="h-11 flex items-center justify-center bg-transparent border border-[#191c1d]/15 hover:bg-[#f3f4f5] text-[#191c1d] text-[15px] font-medium rounded-lg transition-all disabled:opacity-50"
           >
-            <FaFacebook size={20} color="#1877F2" /> Facebook
+            <FaFacebook size={18} className="text-[#1877F2] mr-2" /> Facebook
           </button>
         </div>
 
-        {/* 7. Change to React Router Link */}
-        <p className="text-center text-sm text-slate-500">
+        <p className="text-center text-sm text-[#191c1d]/60">
           Already have an account?{" "}
-          <Link to="/login" className="text-sky-500 font-medium hover:underline">Login</Link>
+          <Link to="/login" className="text-[#003d9b] font-semibold hover:underline">Login</Link>
         </p>
 
       </div>
