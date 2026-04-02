@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { UseTheme } from "./UseTheme";
+import { useTheme } from "./useTheme";
 
 function objectToRows(specifications = {}) {
   const entries = Object.entries(specifications);
@@ -24,7 +24,7 @@ function rowsToObject(rows) {
 }
 
 export default function SpecificationsEditor({ specifications = {}, onChange }) {
-  const { theme } = UseTheme();
+  const { theme } = useTheme();
   const dark = theme === "dark";
   const [rows, setRows] = useState(() => objectToRows(specifications));
 

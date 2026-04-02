@@ -1,10 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import ProductForm from "./ProductForm";
-import { createProduct, getProduct, updateProduct } from "./api";
-import { getCategories } from "../../services/categories";
-import { uploadProductImage } from "./api";
-import { UseTheme } from "./UseTheme";
+import { createProduct, getProduct, updateProduct, uploadProductImage, deleteProductImage } from "./api";
+import { listCategories } from "./api";
+import { useTheme } from "./useTheme";
 
 const emptyProduct = {
   name: "",
@@ -18,6 +17,7 @@ const emptyProduct = {
   categoryId: "",
   images: [],
   imageUrls: [],
+  imagesToDelete: [],
   newImagePreviews: [],
   badge: "",
   isFeatured: false,
@@ -28,7 +28,7 @@ export default function ProductFormPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const isEdit = Boolean(id);
-  const { theme } = UseTheme();
+  const { theme } = useTheme();
   const dark = theme === "dark";
 
   const [value, setValue] = useState(emptyProduct);
@@ -38,11 +38,13 @@ export default function ProductFormPage() {
   const [uploadingImages, setUploadingImages] = useState(false);
   const [err, setErr] = useState("");
   const [selectedFiles, setSelectedFiles] = useState([]);
+  // Track blob URLs separately for safe cleanup
+  const blobUrlsRef = useRef([]);
 
   useEffect(() => {
     async function loadCategories() {
       try {
-        const cats = await getCategories();
+        const cats = await listCategories();
         setCategories(cats);
       } catch (e) {
         console.error("Failed to load categories:", e);
@@ -71,6 +73,7 @@ export default function ProductFormPage() {
           categoryId: String(product?.categoryId ?? product?.category?.id ?? ""),
           images: Array.isArray(product?.images) ? product.images : [],
           imageUrls: Array.isArray(product?.imageUrls) ? product.imageUrls : [],
+          imagesToDelete: [],
           newImagePreviews: [],
           badge: product?.badge ?? "",
           isFeatured: Boolean(product?.isFeatured),
@@ -86,18 +89,19 @@ export default function ProductFormPage() {
     loadProduct();
   }, [id, isEdit]);
 
+  // Clean up blob URLs on unmount only
   useEffect(() => {
     return () => {
-      value.imageUrls?.forEach((url) => {
-        if (url.startsWith("blob:")) URL.revokeObjectURL(url);
-      });
+      blobUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
     };
-  }, [value.imageUrls]);
+  }, []);
 
   async function handleFilesSelected(e) {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
     const previewUrls = files.map((file) => URL.createObjectURL(file));
+    // Track blob URLs for cleanup
+    blobUrlsRef.current.push(...previewUrls);
 
     if (!isEdit) {
       setSelectedFiles((prev) => [...prev, ...files]);
@@ -151,6 +155,9 @@ export default function ProductFormPage() {
     try {
       if (isEdit) {
         await updateProduct(id, payload);
+        if (value.imagesToDelete?.length > 0) {
+          await Promise.all(value.imagesToDelete.map((key) => deleteProductImage(id, key)));
+        }
         navigate("/admin/products");
         return;
       }

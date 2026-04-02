@@ -1,15 +1,16 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { deleteCategory, listCategories } from "./api";
-import { UseTheme } from "./UseTheme";
+import { useTheme } from "./useTheme";
 
 export default function CategoriesPage() {
-  const { theme } = UseTheme();
+  const { theme } = useTheme();
   const dark = theme === "dark";
 
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState("");
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
 
   async function load() {
     setLoading(true);
@@ -29,13 +30,13 @@ export default function CategoriesPage() {
   }, []);
 
   async function onDelete(id) {
-    const ok = confirm("Delete this category?");
-    if (!ok) return;
     try {
       await deleteCategory(id);
+      setConfirmDeleteId(null);
       await load();
     } catch (e) {
-      alert(e.message || "Delete failed");
+      setErr(e.message || "Delete failed");
+      setConfirmDeleteId(null);
     }
   }
 
@@ -129,12 +130,33 @@ export default function CategoriesPage() {
                       >
                         Edit
                       </Link>
-                      <button
-                        onClick={() => onDelete(cat.id)}
-                        className="rounded-lg bg-red-500/20 px-3 py-1.5 text-xs font-semibold text-red-500 hover:bg-red-500/30"
-                      >
-                        Delete
-                      </button>
+
+                      {confirmDeleteId === cat.id ? (
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => onDelete(cat.id)}
+                            className="rounded-lg bg-red-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-600"
+                            aria-label={`Confirm delete ${cat.name}`}
+                          >
+                            Confirm
+                          </button>
+                          <button
+                            onClick={() => setConfirmDeleteId(null)}
+                            className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${dark ? "bg-slate-800 text-slate-300 hover:bg-slate-700" : "bg-slate-200 text-slate-600 hover:bg-slate-300"}`}
+                            aria-label="Cancel delete"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => setConfirmDeleteId(cat.id)}
+                          className="rounded-lg bg-red-500/20 px-3 py-1.5 text-xs font-semibold text-red-500 hover:bg-red-500/30"
+                          aria-label={`Delete ${cat.name}`}
+                        >
+                          Delete
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>

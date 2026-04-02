@@ -1,10 +1,10 @@
 import { useRef, useState } from "react";
-import { UseTheme } from "./UseTheme";
+import { useTheme } from "./useTheme";
 
 export default function ImageUploader({ imageUrls = [], onFilesSelected, onRemove }) {
   const inputRef = useRef(null);
   const [isDragging, setIsDragging] = useState(false);
-  const { theme } = UseTheme();
+  const { theme } = useTheme();
   const dark = theme === "dark";
 
   function handleDragEnter(e) { e.preventDefault(); e.stopPropagation(); setIsDragging(true); }
@@ -25,7 +25,11 @@ export default function ImageUploader({ imageUrls = [], onFilesSelected, onRemov
   return (
     <div className="space-y-4 md:col-span-2">
       <div
+        role="button"
+        tabIndex={0}
+        aria-label="Upload product images"
         onClick={handleClick}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleClick(); } }}
         onDragEnter={handleDragEnter}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
