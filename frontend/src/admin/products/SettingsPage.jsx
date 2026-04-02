@@ -1,7 +1,7 @@
-import { UseTheme } from "./UseTheme";
+import { useTheme } from "./useTheme";
 
 export default function SettingsPage() {
-  const { theme, setTheme } = UseTheme();
+  const { theme, setTheme } = useTheme();
   const dark = theme === "dark";
 
   return (

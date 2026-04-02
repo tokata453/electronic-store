@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { createCategory, getCategory, updateCategory, uploadCategoryImage } from "./api";
-import { UseTheme } from "./UseTheme";
+import { useTheme } from "./useTheme";
 
 const emptyCategory = {
   name: "",
@@ -18,7 +18,7 @@ export default function CategoryFormPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const isEdit = Boolean(id);
-  const { theme } = UseTheme();
+  const { theme } = useTheme();
   const dark = theme === "dark";
 
   const [value, setValue] = useState(emptyCategory);
@@ -240,7 +240,11 @@ export default function CategoryFormPage() {
               <label className={labelCls}>Category Image</label>
 
               <div
+                role="button"
+                tabIndex={0}
+                aria-label="Upload category image"
                 onClick={() => inputRef.current?.click()}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); inputRef.current?.click(); } }}
                 onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
                 onDragLeave={() => setIsDragging(false)}
                 onDrop={handleDrop}

@@ -73,6 +73,13 @@ export async function uploadProductImage(id, file) {
   };
 }
 
+export async function deleteProductImage(id, imageKey) {
+  const res = await api.delete(`/api/upload/product/${id}/image`, {
+    data: { imageKey }
+  });
+  return res.data;
+}
+
 // ─── Categories ──────────────────────────────────────────────
 
 export async function listCategories() {

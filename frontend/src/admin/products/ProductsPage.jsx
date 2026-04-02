@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { deleteProduct, listProducts } from "./api";
-import { getCategories } from "../../services/categories";
-import { UseTheme } from "./UseTheme";
+import { listCategories } from "./api";
+import { useTheme } from "./useTheme";
 
 export default function ProductsPage() {
-  const { theme } = UseTheme();
+  const { theme } = useTheme();
   const dark = theme === "dark";
 
   const [q, setQ] = useState("");
@@ -16,6 +16,7 @@ export default function ProductsPage() {
   const [categories, setCategories] = useState([]);
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
 
   async function load() {
     setLoading(true);
@@ -35,16 +36,17 @@ export default function ProductsPage() {
     }
   }
 
+  // Single unified effect — debounces search while responding immediately to page/category changes
   useEffect(() => {
-    const t = setTimeout(() => load(), 300);
+    const t = setTimeout(() => load(), q ? 300 : 0);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [q, categoryId]);
+  }, [q, categoryId, page]);
 
   useEffect(() => {
     async function loadCategories() {
       try {
-        const cats = await getCategories();
+        const cats = await listCategories();
         setCategories(cats);
       } catch (err) {
         console.error("Failed to load categories", err);
@@ -53,21 +55,14 @@ export default function ProductsPage() {
     loadCategories();
   }, []);
 
-  useEffect(() => {
-    load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, categoryId]);
-
-  const filteredCount = useMemo(() => items.length, [items]);
-
   async function onDelete(id) {
-    const ok = confirm("Delete this product?");
-    if (!ok) return;
     try {
       await deleteProduct(id);
+      setConfirmDeleteId(null);
       await load();
     } catch (e) {
-      alert(e.message || "Delete failed");
+      setErr(e.message || "Delete failed");
+      setConfirmDeleteId(null);
     }
   }
 
@@ -83,11 +78,13 @@ export default function ProductsPage() {
             onChange={(e) => setQ(e.target.value)}
             placeholder="Search products..."
             className={inputCls}
+            aria-label="Search products"
           />
           <select
             value={categoryId}
             onChange={(e) => setCategoryId(e.target.value)}
             className={inputCls}
+            aria-label="Filter by category"
           >
             <option value="">All Categories</option>
             {categories.map((c) => (
@@ -155,7 +152,7 @@ export default function ProductsPage() {
                     {p.salePrice ? (
                       <div className="flex flex-col">
                         <span className="font-semibold">${p.salePrice}</span>
-                        <span className={`text-xs line-through ${dark ? "text-slate-400" : "text-slate-400"}`}>${p.price}</span>
+                        <span className="text-xs line-through text-slate-400">${p.price}</span>
                       </div>
                     ) : (
                       <span>${p.price}</span>
@@ -182,12 +179,33 @@ export default function ProductsPage() {
                       >
                         Edit
                       </Link>
-                      <button
-                        onClick={() => onDelete(p.id)}
-                        className="rounded-lg bg-red-500/20 px-3 py-1.5 text-xs font-semibold text-red-500 hover:bg-red-500/30"
-                      >
-                        Delete
-                      </button>
+
+                      {confirmDeleteId === p.id ? (
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => onDelete(p.id)}
+                            className="rounded-lg bg-red-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-600"
+                            aria-label={`Confirm delete ${p.name}`}
+                          >
+                            Confirm
+                          </button>
+                          <button
+                            onClick={() => setConfirmDeleteId(null)}
+                            className={`rounded-lg px-3 py-1.5 text-xs font-semibold ${dark ? "bg-slate-800 text-slate-300 hover:bg-slate-700" : "bg-slate-200 text-slate-600 hover:bg-slate-300"}`}
+                            aria-label="Cancel delete"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => setConfirmDeleteId(p.id)}
+                          className="rounded-lg bg-red-500/20 px-3 py-1.5 text-xs font-semibold text-red-500 hover:bg-red-500/30"
+                          aria-label={`Delete ${p.name}`}
+                        >
+                          Delete
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -218,7 +236,7 @@ export default function ProductsPage() {
       </div>
 
       {!loading && (
-        <div className={`text-xs ${dark ? "text-slate-400" : "text-slate-500"}`}>{filteredCount} products</div>
+        <div className={`text-xs ${dark ? "text-slate-400" : "text-slate-500"}`}>{items.length} products</div>
       )}
     </div>
   );
