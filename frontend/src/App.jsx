@@ -14,6 +14,9 @@ import { ThemeProvider } from './admin/products/ThemeContext.jsx';
 import CategoriesPage from "./admin/products/CategoriesPage";
 import CategoryFormPage from "./admin/products/CategoryFormPage";
 import ProductPage from './pages/ProductPage';
+import TrendingPage from './pages/TrendingPage';
+import OnSalePage from './pages/OnSalePage';
+import CartPage from './pages/CartPage';
 
 const router = createBrowserRouter([
   {
@@ -43,6 +46,18 @@ const router = createBrowserRouter([
       {
         path: "product/:id",
         element: <ProductPage />
+      },
+      {
+        path: "/trending",
+        element: <TrendingPage />
+      },
+      {
+        path: "/sale",
+        element: <OnSalePage />
+      },
+      {
+        path: "/cart",
+        element: <CartPage />
       }
     ],
   },

@@ -1,44 +1,61 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Field,
-  FieldDescription,
-  FieldGroup,
-  FieldLabel,
-} from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
-import { FaFacebook } from "react-icons/fa";
+import { useNavigate, Link } from "react-router-dom"; 
 import { FcGoogle } from "react-icons/fc";
+import { FaFacebook } from "react-icons/fa";
+import { FiEye, FiEyeOff, FiAlertCircle } from "react-icons/fi";
+import { authService } from "@/services/authentication"; 
 
-import { authService } from "@/services/authentication";
-
-export default function Register({ className, ...props }) {
+export default function Register() {
   const [form, setForm] = useState({ firstName: "", lastName: "", email: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
+  const [focused, setFocused] = useState(null);
+  const [touched, setTouched] = useState({});
+  
   const [apiError, setApiError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
   const handle = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
+  const handleBlur = (name) => {
+    setFocused(null);
+    setTouched((prev) => ({ ...prev, [name]: true }));
+  };
+
+  const errors = {
+    firstName: touched.firstName && !form.firstName ? "Please input your first name" : "",
+    lastName: touched.lastName && !form.lastName ? "Please input your last name" : "",
+    email: touched.email && !form.email ? "Please input your email" : "",
+    password:
+      touched.password && !form.password
+        ? "Please input your password"
+        : touched.password && form.password.length < 6
+        ? "Password must have at least 6 characters"
+        : "",
+  };
+
+  const inputClass = (name) => {
+    const hasError = !!errors[name];
+    const isFocused = focused === name;
+    return `w-full px-4 h-12 rounded-lg text-[15px] text-[#191c1d] border outline-none transition-all duration-200 placeholder:text-[#191c1d]/40 ${
+      hasError
+        ? "border-[#ffcdd2] bg-[#ffebee]"
+        : isFocused
+        ? "border-[#003d9b]/30 bg-white shadow-[0_0_0_4px_rgba(0,61,155,0.05)]"
+        : "border-transparent bg-[#f3f4f5]"
+    }`;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (errors.firstName || errors.lastName || errors.email || errors.password) {
+      setTouched({ firstName: true, lastName: true, email: true, password: true });
+      return; 
+    }
 
     if (!form.firstName || !form.lastName || !form.email || !form.password) {
       setApiError("Please fill out all fields.");
-      return;
-    }
-    if (form.password.length < 6) {
-      setApiError("Password must have at least 6 characters.");
       return;
     }
 
@@ -51,7 +68,7 @@ export default function Register({ className, ...props }) {
         lastName: form.lastName,
         email: form.email,
         password: form.password,
-        phone: "+855000000000",
+        phone: "+855000000000" 
       };
 
       const result = await authService.register(userData);
@@ -71,152 +88,181 @@ export default function Register({ className, ...props }) {
   };
 
   return (
-    <div className={cn("flex items-center justify-center min-h-[80vh] bg-linear-to-br from-sky-100 via-blue-50 to-sky-100 p-5 font-sans w-full", className)} {...props}>
-      <div className="w-full max-w-md">
-        <Card className="shadow-xl border-0">
-          <CardHeader className="text-center">
-            <CardTitle>Create an Account</CardTitle>
-            <CardDescription>
-              Please sign up below to create an account
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
+    <div className="flex items-center justify-center min-h-[85vh] bg-[#f8f9fa] p-5 font-sans w-full">
+      <div className="bg-white rounded-2xl shadow-[0_20px_40px_rgba(25,28,29,0.06)] p-10 w-full max-w-lg">
 
-            <form onSubmit={handleSubmit}>
-              <FieldGroup className="flex flex-col gap-4">
+        <div className="text-center mb-8">
+          <h1 className="text-2xl font-bold text-[#003d9b] tracking-tight mb-2">Create an Account</h1>
+          <p className="text-[#191c1d]/60 text-sm">Please sign up below to join the gallery.</p>
+        </div>
 
-                {/* Display API error messages */}
-                {apiError && (
-                  <div className="text-sm text-red-500 bg-red-50 border border-red-200 p-3 rounded-md text-center">
-                    {apiError}
-                  </div>
+        {apiError && (
+          <div className="mb-5 p-3 rounded-lg bg-[#ffebee] border border-[#ffcdd2] text-[#d32f2f] text-sm text-center font-medium">
+            {apiError}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit}>
+          
+          <div className="flex gap-4 mb-5">
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-[#191c1d] mb-1.5">
+                First Name <span className="text-[#d32f2f]">*</span>
+              </label>
+              <div className="relative">
+                <input
+                  name="firstName"
+                  value={form.firstName}
+                  onChange={handle}
+                  onFocus={() => setFocused("firstName")}
+                  onBlur={() => handleBlur("firstName")}
+                  placeholder="Enter first name"
+                  disabled={isLoading}
+                  className={`${inputClass("firstName")} ${errors.firstName ? "pr-10" : ""}`}
+                />
+                {errors.firstName && (
+                  <FiAlertCircle className="absolute right-3 top-1/2 -translate-y-1/2 text-[#d32f2f]" size={18} />
                 )}
+              </div>
+              {errors.firstName && (
+                <p className="text-[#d32f2f] text-xs mt-1.5 font-medium">{errors.firstName}</p>
+              )}
+            </div>
+            
+            <div className="flex-1">
+              <label className="block text-sm font-medium text-[#191c1d] mb-1.5">
+                Last Name <span className="text-[#d32f2f]">*</span>
+              </label>
+              <div className="relative">
+                <input
+                  name="lastName"
+                  value={form.lastName}
+                  onChange={handle}
+                  onFocus={() => setFocused("lastName")}
+                  onBlur={() => handleBlur("lastName")}
+                  placeholder="Enter last name"
+                  disabled={isLoading}
+                  className={`${inputClass("lastName")} ${errors.lastName ? "pr-10" : ""}`}
+                />
+                {errors.lastName && (
+                  <FiAlertCircle className="absolute right-3 top-1/2 -translate-y-1/2 text-[#d32f2f]" size={18} />
+                )}
+              </div>
+              {errors.lastName && (
+                <p className="text-[#d32f2f] text-xs mt-1.5 font-medium">{errors.lastName}</p>
+              )}
+            </div>
+          </div>
 
-                {/* Name Row */}
-                <div className="grid grid-cols-2 gap-3">
-                  <Field>
-                    <FieldLabel htmlFor="firstName">First Name</FieldLabel>
-                    <Input
-                      id="firstName"
-                      name="firstName"
-                      placeholder="John"
-                      value={form.firstName}
-                      onChange={handle}
-                      disabled={isLoading}
-                      required
-                    />
-                  </Field>
-                  <Field>
-                    <FieldLabel htmlFor="lastName">Last Name</FieldLabel>
-                    <Input
-                      id="lastName"
-                      name="lastName"
-                      placeholder="Doe"
-                      value={form.lastName}
-                      onChange={handle}
-                      disabled={isLoading}
-                      required
-                    />
-                  </Field>
-                </div>
+          <div className="mb-5">
+            <label className="block text-sm font-medium text-[#191c1d] mb-1.5">
+              Email <span className="text-[#d32f2f]">*</span>
+            </label>
+            <div className="relative">
+              <input
+                name="email"
+                type="email"
+                value={form.email}
+                onChange={handle}
+                onFocus={() => setFocused("email")}
+                onBlur={() => handleBlur("email")}
+                placeholder="name@example.com"
+                disabled={isLoading}
+                className={`${inputClass("email")} ${errors.email ? "pr-10" : ""}`}
+              />
+              {errors.email && (
+                <FiAlertCircle className="absolute right-3 top-1/2 -translate-y-1/2 text-[#d32f2f]" size={18} />
+              )}
+            </div>
+            {errors.email && (
+              <p className="text-[#d32f2f] text-xs mt-1.5 font-medium">{errors.email}</p>
+            )}
+          </div>
 
-                {/* Email */}
-                <Field>
-                  <FieldLabel htmlFor="register-email">Email</FieldLabel>
-                  <Input
-                    id="register-email"
-                    name="email"
-                    type="email"
-                    placeholder="m@example.com"
-                    value={form.email}
-                    onChange={handle}
-                    disabled={isLoading}
-                    required
-                  />
-                </Field>
+          <div className="mb-5">
+            <label className="block text-sm font-medium text-[#191c1d] mb-1.5">
+              Password <span className="text-[#d32f2f]">*</span>
+            </label>
+            <div className="relative">
+              <input
+                name="password"
+                type={showPassword ? "text" : "password"}
+                value={form.password}
+                onChange={handle}
+                onFocus={() => setFocused("password")}
+                onBlur={() => handleBlur("password")}
+                placeholder="••••••••"
+                disabled={isLoading}
+                className={`${inputClass("password")} ${errors.password ? "pr-16" : "pr-12"}`}
+              />
+              {errors.password && (
+                <FiAlertCircle className="absolute right-10 top-1/2 -translate-y-1/2 text-[#d32f2f]" size={18} />
+              )}
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#191c1d]/40 hover:text-[#191c1d]/80 transition-colors"
+              >
+                {showPassword ? <FiEye size={20} /> : <FiEyeOff size={20} />}
+              </button>
+            </div>
+            {errors.password && (
+              <p className="text-[#d32f2f] text-xs mt-1.5 font-medium">{errors.password}</p>
+            )}
+          </div>
 
-                {/* Password */}
-                <Field>
-                  <FieldLabel htmlFor="register-password">Password</FieldLabel>
-                  <div className="relative">
-                    <Input
-                      id="register-password"
-                      name="password"
-                      type={showPassword ? "text" : "password"}
-                      placeholder="At least 6 characters"
-                      value={form.password}
-                      onChange={handle}
-                      disabled={isLoading}
-                      required
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-500 hover:text-gray-700 transition-colors"
-                    >
-                      {showPassword ? "Hide" : "Show"}
-                    </button>
-                  </div>
-                </Field>
+          <p className="text-[13px] text-[#191c1d]/60 mb-6 leading-relaxed">
+            By signing up I agree to the {" "}
+            <a href="#" className="text-[#003d9b] font-medium hover:underline">Privacy Policy</a>{" "}
+            and{" "}
+            <a href="#" className="text-[#003d9b] font-medium hover:underline">Terms & Conditions</a>
+          </p>
 
-                {/* Terms */}
-                <p className="text-xs text-muted-foreground leading-relaxed">
-                  By signing up I agree to Electronic Store's{" "}
-                  <a href="#" className="underline font-medium hover:text-sky-500 transition-colors">Privacy Policy</a>{" "}
-                  and{" "}
-                  <a href="#" className="underline font-medium hover:text-sky-500 transition-colors">Terms & Conditions</a>
-                </p>
+          <button 
+            type="submit" 
+            disabled={isLoading}
+            className="w-full h-12 rounded-lg bg-[#003d9b] hover:bg-[#003d9b]/90 text-white font-medium text-[15px] shadow-[0_10px_20px_rgba(0,61,155,0.15)] transition-all mb-6 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isLoading ? "Creating Account..." : "Create Account"}
+          </button>
+        </form>
 
-                <Field className="flex flex-col gap-2 mt-2">
-                  <Button type="submit" className="w-full" disabled={isLoading}>
-                    {isLoading ? "Creating Account..." : "Sign up"}
-                  </Button>
+        {/* Divider */}
+        <div className="relative my-6">
+          <div className="absolute inset-0 flex items-center">
+            <span className="w-full border-t border-[#191c1d]/10" />
+          </div>
+          <div className="relative flex justify-center text-[10px] font-bold tracking-[0.05em] uppercase">
+            <span className="bg-white px-4 text-[#191c1d]/40">
+              Or sign up with
+            </span>
+          </div>
+        </div>
 
-                  {/* Visual divider */}
-                  <div className="relative my-2">
-                    <div className="absolute inset-0 flex items-center">
-                      <span className="w-full border-t border-gray-200" />
-                    </div>
-                    <div className="relative flex justify-center text-xs uppercase">
-                      <span className="bg-white px-2 text-gray-500">
-                        Or continue with
-                      </span>
-                    </div>
-                  </div>
+        <div className="grid grid-cols-2 gap-3 mb-6">
+          <button 
+            type="button" 
+            onClick={() => authService.loginWithGoogle()}
+            disabled={isLoading}
+            className="h-11 flex items-center justify-center bg-transparent border border-[#191c1d]/15 hover:bg-[#f3f4f5] text-[#191c1d] text-[15px] font-medium rounded-lg transition-all disabled:opacity-50"
+          >
+            <FcGoogle size={18} className="mr-2" /> Google
+          </button>
+          <button 
+            type="button"
+            onClick={() => authService.loginWithFacebook()}
+            disabled={isLoading} 
+            className="h-11 flex items-center justify-center bg-transparent border border-[#191c1d]/15 hover:bg-[#f3f4f5] text-[#191c1d] text-[15px] font-medium rounded-lg transition-all disabled:opacity-50"
+          >
+            <FaFacebook size={18} className="text-[#1877F2] mr-2" /> Facebook
+          </button>
+        </div>
 
-                  <Button
-                    variant="outline"
-                    type="button"
-                    onClick={() => authService.loginWithGoogle()}
-                    disabled={isLoading}
-                    className="w-full flex items-center justify-center gap-2"
-                  >
-                    <FcGoogle size={20} />
-                    Sign up with Google
-                  </Button>
+        <p className="text-center text-sm text-[#191c1d]/60">
+          Already have an account?{" "}
+          <Link to="/login" className="text-[#003d9b] font-semibold hover:underline">Login</Link>
+        </p>
 
-                  <Button
-                    variant="outline"
-                    type="button"
-                    onClick={() => authService.loginWithFacebook()}
-                    disabled={isLoading}
-                    className="w-full flex items-center justify-center gap-2"
-                  >
-                    <FaFacebook className="h-4 w-4 text-blue-600" />
-                    Sign up with Facebook
-                  </Button>
-
-                  <FieldDescription className="text-center mt-4">
-                    Already have an account?{" "}
-                    <Link to="/login" className="underline font-medium hover:text-sky-500 transition-colors">
-                      Login
-                    </Link>
-                  </FieldDescription>
-                </Field>
-              </FieldGroup>
-            </form>
-          </CardContent>
-        </Card>
       </div>
     </div>
   );

@@ -126,30 +126,40 @@ const getCart = async (req, res, next) => {
 
 const addToCart = async (req, res, next) => {
   try {
-    const { productId } = req.body;
+    // FIX 1: Explicitly cast productId to an Integer
+    const productId = parseInt(req.body.productId, 10);
     const quantity = parseQuantity(req.body.quantity ?? 1);
     const userId = req.user?.id;
     const sessionId = resolveSessionId(req);
 
-    if (!productId) return next(new AppError("Product ID required", 400))
-    if (!quantity) return next(new AppError("Quantity must be a positive integer", 400))
-    if (!userId && !sessionId) return next(new AppError("Session ID required for guest cart actions", 400))
+    // FIX 2: Check for NaN in case the frontend sent a bad string
+    if (!productId || isNaN(productId)) return next(new AppError("Valid Product ID required", 400));
+    if (!quantity) return next(new AppError("Quantity must be a positive integer", 400));
+    if (!userId && !sessionId) return next(new AppError("Session ID or User ID required for guest cart actions", 400));
 
     const product = await Product.findByPk(productId);
-    if (!product) return next(new AppError('Product not found', 404))
-    if (!product.isActive) return next(new AppError('Product not available', 400))
+    if (!product) return next(new AppError('Product not found', 404));
+    if (!product.isActive) return next(new AppError('Product not available', 400));
     if (product.stock < quantity) {
       return res.status(400).json({ success: false, error: { message: 'Insufficient stock', availableStock: product.stock } });
     }
 
     const cart = await getOrCreateCart(userId, sessionId);
+    
+    // Safety check to ensure cart was actually created
+    if (!cart || !cart.id) {
+       return next(new AppError('Critical Error: Could not resolve Cart ID', 500));
+    }
+
+    // Because productId is now an Integer, this Sequelize query will no longer crash
     let cartItem = await CartItem.findOne({ where: { cartId: cart.id, productId } });
-    const price = product.salePrice || product.price;
+    
+    // Convert price to a float just in case the DB stores it as a decimal/string
+    const price = parseFloat(product.salePrice || product.price);
 
     if (cartItem) {
       const newQuantity = cartItem.quantity + quantity;
-      if (product.stock < newQuantity)
-        {
+      if (product.stock < newQuantity) {
         return res.status(400).json({ 
           success: false, 
           error: { message: 'Insufficient stock', availableStock: product.stock, currentQuantity: cartItem.quantity } 
@@ -171,7 +181,7 @@ const addToCart = async (req, res, next) => {
     res.json({ success: true, data: { message: 'Item added to cart', item: itemWithUrls, cartId: cart.id } });
   } catch (error) {
     console.error('Add to cart error:', error);
-    next(error);
+    next(error); 
   }
 };
 

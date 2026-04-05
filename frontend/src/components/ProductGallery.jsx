@@ -1,35 +1,38 @@
 import React, { useState } from "react";
 
 export default function ProductGallery({ images, productName }) {
-    const [selectedImage, setSelectedImage] = useState(images?.[0] || 'placeholder.png');
+    // Safely handle missing images
+    const safeImages = images && images.length > 0 ? images : ['/placeholder.png'];
+    const [selectedImage, setSelectedImage] = useState(safeImages[0]);
 
     return (
-        <div className="flex flex-col gap-4">
-            {/* Main Large Image */}
-            <div className="w-full aspect-square bg-muted rounded-2xl overflow-hidden flex items-center justify-center border border-gray-100">
+        <div className="flex flex-col gap-6 w-full lg:sticky lg:top-28">
+            
+            {/* Main Showcase Image */}
+            <div className="w-full aspect-[4/5] bg-[#f3f4f5] rounded-[2rem] flex items-center justify-center p-12 relative overflow-hidden group">
                 <img 
                     src={selectedImage} 
                     alt={productName} 
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-contain mix-blend-multiply transition-transform duration-700 ease-out group-hover:scale-110"
                 />
             </div>
 
-            {/* Thumbnails Row */}
-            {images && images.length > 1 && (
-                <div className="flex gap-4 overflow-x-auto pb-2">
-                    {images.map((imgUrl, index) => (
+            {/* Thumbnails */}
+            {safeImages.length > 1 && (
+                <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
+                    {safeImages.map((imgUrl, index) => (
                         <button 
                             key={index}
                             onClick={() => setSelectedImage(imgUrl)}
                             className={`
-                                relative w-20 h-20 sm:w-24 sm:h-24 rounded-lg overflow-hidden shrink-0 border-2 transition-all
-                                ${selectedImage === imgUrl ? 'border-primary ring-2 ring-primary/20' : 'border-transparent hover:border-gray-300'}
+                                relative w-24 h-24 rounded-2xl bg-[#f3f4f5] overflow-hidden shrink-0 transition-all duration-300
+                                ${selectedImage === imgUrl ? 'ring-2 ring-[#003d9b] ring-offset-2 opacity-100' : 'opacity-60 hover:opacity-100'}
                             `}
                         >
                             <img 
                                 src={imgUrl} 
-                                alt={`${productName} view ${index + 1}`}
-                                className="w-full h-full object-cover"
+                                alt={`${productName} angle ${index + 1}`}
+                                className="w-full h-full object-contain p-2 mix-blend-multiply"
                             />
                         </button>
                     ))}
