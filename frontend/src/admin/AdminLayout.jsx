@@ -1,12 +1,19 @@
-import { NavLink, Outlet } from "react-router-dom";
+import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useState } from "react";
-import { UseTheme } from "./products/UseTheme";
-import { Package, PlusCircle, LayoutGrid, PlusSquare, Settings } from "lucide-react";
+import { useTheme } from "./products/useTheme";
+import { Package, PlusCircle, LayoutGrid, PlusSquare, Settings, LogOut } from "lucide-react";
 
 export default function AdminLayout() {
   const [collapsed, setCollapsed] = useState(false);
-  const { theme } = UseTheme();
+  const { theme } = useTheme();
   const dark = theme === "dark";
+  const navigate = useNavigate();
+
+  function handleLogout() {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    navigate("/login");
+  }
 
   return (
     <div className={`flex min-h-screen ${dark ? "bg-slate-950 text-slate-100" : "bg-slate-100 text-slate-900"}`}>
@@ -23,6 +30,7 @@ export default function AdminLayout() {
           )}
           <button
             onClick={() => setCollapsed(!collapsed)}
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             className={`${dark ? "text-slate-400 hover:text-white" : "text-slate-500 hover:text-slate-900"}`}
           >
             ☰
@@ -96,7 +104,7 @@ export default function AdminLayout() {
           </NavLink>
         </nav>
 
-        {/* Settings button at bottom */}
+        {/* Settings & Logout at bottom */}
         <div className={`p-2 border-t ${dark ? "border-slate-800" : "border-slate-200"}`}>
           <NavLink
             to="/admin/settings"
@@ -113,6 +121,15 @@ export default function AdminLayout() {
               <Settings size={18} /> {!collapsed && "Settings"}
             </span>
           </NavLink>
+
+          <button
+            onClick={handleLogout}
+            className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm transition w-full mt-1 ${
+              dark ? "text-red-400 hover:bg-slate-800" : "text-red-500 hover:bg-slate-100"
+            }`}
+          >
+            <LogOut size={18} /> {!collapsed && "Logout"}
+          </button>
         </div>
       </aside>
 

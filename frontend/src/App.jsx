@@ -1,5 +1,6 @@
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import MainLayout from './layouts/MainLayout';
+import AdminGuard from "./admin/AdminGuard";
 import AdminLayout from "./admin/AdminLayout";
 import Home from './pages/Home';
 import LoginForm from './components/login-form';
@@ -61,38 +62,43 @@ const router = createBrowserRouter([
     ],
   },
 
-  // ADMIN ROUTES
+  // ADMIN ROUTES — protected by AdminGuard
   {
     path: "/admin",
-    element: <AdminLayout />,
+    element: <AdminGuard />,
     children: [
       {
-        path: "products",
-        element: <ProductsPage />,
-      },
-      {
-        path: "products/new",
-        element: <ProductFormPage />
-      },
-      {
-        path: "products/:id",
-        element: <ProductFormPage />
-      },
-      {
-        path: "settings",
-        element: <SettingsPage />
-      },
-      {
-        path: "categories",
-        element: <CategoriesPage />
-      },
-      {
-        path: "categories/new",
-        element: <CategoryFormPage />
-      },
-      {
-        path: "categories/:id",
-        element: <CategoryFormPage />
+        element: <AdminLayout />,
+        children: [
+          {
+            path: "products",
+            element: <ProductsPage />,
+          },
+          {
+            path: "products/new",
+            element: <ProductFormPage />
+          },
+          {
+            path: "products/:id",
+            element: <ProductFormPage />
+          },
+          {
+            path: "settings",
+            element: <SettingsPage />
+          },
+          {
+            path: "categories",
+            element: <CategoriesPage />
+          },
+          {
+            path: "categories/new",
+            element: <CategoryFormPage />
+          },
+          {
+            path: "categories/:id",
+            element: <CategoryFormPage />
+          },
+        ],
       },
     ],
   },

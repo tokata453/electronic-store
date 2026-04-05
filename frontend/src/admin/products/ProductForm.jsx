@@ -1,6 +1,6 @@
 import ImageUploader from "./ImageUploader";
 import SpecsEditor from "./SpecsEditor";
-import { UseTheme } from "./UseTheme";
+import { useTheme } from "./useTheme";
 
 export default function ProductForm({
   value,
@@ -11,11 +11,24 @@ export default function ProductForm({
   onFilesSelected,
   uploadingImages = false,
 }) {
-  const { theme } = UseTheme();
+  const { theme } = useTheme();
   const dark = theme === "dark";
 
   function set(field, v) {
     onChange({ ...value, [field]: v });
+  }
+
+  // Auto-generate slug from name (consistent with CategoryFormPage)
+  function handleNameChange(name) {
+    const updates = { ...value, name };
+    if (!value.slug || value.slug === toSlug(value.name)) {
+      updates.slug = toSlug(name);
+    }
+    onChange(updates);
+  }
+
+  function toSlug(str) {
+    return str.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
   }
 
   const inputCls = `w-full rounded-lg border px-3 py-2 outline-none transition
@@ -32,7 +45,7 @@ export default function ProductForm({
 
         <div>
           <label className={labelCls}>Name</label>
-          <input required value={value.name} onChange={(e) => set("name", e.target.value)} className={inputCls} />
+          <input required value={value.name} onChange={(e) => handleNameChange(e.target.value)} className={inputCls} />
         </div>
 
         <div>
@@ -126,9 +139,15 @@ export default function ProductForm({
           onRemove={(index) => {
             const newKeys = [...value.images];
             const newUrls = [...value.imageUrls];
-            newKeys.splice(index, 1);
+            const removedKey = newKeys.splice(index, 1)[0];
             newUrls.splice(index, 1);
-            onChange({ ...value, images: newKeys, imageUrls: newUrls });
+            
+            const imagesToDelete = [...(value.imagesToDelete || [])];
+            if (removedKey) {
+              imagesToDelete.push(removedKey);
+            }
+            
+            onChange({ ...value, images: newKeys, imageUrls: newUrls, imagesToDelete });
           }}
         />
       </div>

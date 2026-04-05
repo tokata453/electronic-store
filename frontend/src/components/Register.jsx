@@ -34,7 +34,6 @@ export default function Register() {
         : "",
   };
 
-  // Updated to match the Digital Curator input styling
   const inputClass = (name) => {
     const hasError = !!errors[name];
     const isFocused = focused === name;
