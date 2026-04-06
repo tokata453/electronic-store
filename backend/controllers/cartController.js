@@ -9,7 +9,7 @@ const parseQuantity = (value) => {
   return Number.isInteger(quantity) && quantity > 0 ? quantity : null;
 };
 
-const resolveSessionId = (req) => req.headers['x-session-id'] || req.body.sessionId || req.query.sessionId;
+const resolveSessionId = (req) => req.headers['x-session-id'] || req.body?.sessionId || req.query?.sessionId;
 
 // ═══════════════════════════════════════════════════════════
 // HELPERS
