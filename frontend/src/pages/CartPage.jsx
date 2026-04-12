@@ -156,15 +156,15 @@ export default function CartPage() {
                 
                 {/* Product Image & Details */}
                 <div className="md:col-span-6 flex items-center gap-6">
-                  <Link to={`/product/${item.product?.slug || item.productId}`} className="w-24 h-24 shrink-0 bg-[#f3f4f5] rounded-xl flex items-center justify-center p-2">
+                  <Link to={`/product/${item.productId}`} className="w-24 h-24 shrink-0 bg-[#f3f4f5] rounded-xl flex items-center justify-center p-2">
                     <img 
-                      src={item.product?.images?.[0] || 'placeholder.png'} 
+                      src={item.product?.imageUrls?.[0] || 'placeholder.png'} 
                       alt={item.product?.name} 
                       className="w-full h-full object-contain mix-blend-multiply"
                     />
                   </Link>
                   <div className="flex flex-col">
-                    <Link to={`/product/${item.product?.slug || item.productId}`}>
+                    <Link to={`/product/${item.productId}`}>
                       <h3 className="text-[16px] font-bold text-[#191c1d] leading-tight hover:text-[#003d9b] transition-colors mb-1">
                         {item.product?.name}
                       </h3>
@@ -208,7 +208,7 @@ export default function CartPage() {
                 <div className="md:col-span-3 text-left md:text-right">
                   <span className="md:hidden text-[10px] font-bold text-[#191c1d]/40 uppercase tracking-widest mr-2">Subtotal:</span>
                   <span className="text-[16px] font-bold text-[#191c1d]">
-                    ${parseFloat(item.subtotal).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    ${(item.price * item.quantity).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                   </span>
                 </div>
 

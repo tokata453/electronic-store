@@ -1,6 +1,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { Facebook, Twitter, Instagram, Youtube } from "lucide-react";
+import { FaTelegram } from "react-icons/fa";
 
 export default function Footer() {
   return (
@@ -16,27 +17,29 @@ export default function Footer() {
               i-Tech
             </Link>
             <p className="text-[13px] text-[#191c1d]/60 leading-relaxed font-medium mb-6 max-w-xs">
-              Curating the future of personal technology. We provide premium, precision electronics for the modern professional.
+              We provide premium tech products with exceptional customer service. Your one-stop shop for all things tech!
             </p>
             {/* Social Icons */}
             <div className="flex items-center gap-4 text-[#191c1d]/40">
-              <a href="#" className="hover:text-[#003d9b] transition-colors"><Facebook size={18} strokeWidth={1.5} /></a>
-              <a href="#" className="hover:text-[#003d9b] transition-colors"><Twitter size={18} strokeWidth={1.5} /></a>
-              <a href="#" className="hover:text-[#003d9b] transition-colors"><Instagram size={18} strokeWidth={1.5} /></a>
-              <a href="#" className="hover:text-[#003d9b] transition-colors"><Youtube size={18} strokeWidth={1.5} /></a>
+              <a href="https://facebook.com" className="hover:text-[#003d9b] transition-colors"><Facebook size={18} strokeWidth={1.5} /></a>
+              <a href="https://twitter.com" className="hover:text-[#003d9b] transition-colors"><FaTelegram size={18} strokeWidth={1.5} /></a>
+              <a href="https://instagram.com" className="hover:text-[#003d9b] transition-colors"><Instagram size={18} strokeWidth={1.5} /></a>
+              <a href="https://youtube.com" className="hover:text-[#003d9b] transition-colors"><Youtube size={18} strokeWidth={1.5} /></a>
             </div>
           </div>
 
           {/* 2. Shop Links */}
           <div className="flex flex-col">
             <h3 className="text-[11px] font-bold text-[#191c1d] uppercase tracking-[0.15em] mb-6">
-              Shop Collections
+              Categories
             </h3>
             <ul className="flex flex-col gap-4 text-[13px] text-[#191c1d]/60 font-medium">
-              <li><Link to="/category/smartphones" className="hover:text-[#003d9b] transition-colors">Smartphones</Link></li>
-              <li><Link to="/category/laptops" className="hover:text-[#003d9b] transition-colors">Laptops & Computers</Link></li>
-              <li><Link to="/category/audio" className="hover:text-[#003d9b] transition-colors">Premium Audio</Link></li>
-              <li><Link to="/category/accessories" className="hover:text-[#003d9b] transition-colors">Accessories</Link></li>
+              <li><Link to="/category/1" className="hover:text-[#003d9b] transition-colors">Smartphones</Link></li>
+              <li><Link to="/category/2" className="hover:text-[#003d9b] transition-colors">Laptops & Computers</Link></li>
+              <li><Link to="/category/3" className="hover:text-[#003d9b] transition-colors">iPads & Tablets</Link></li>
+              <li><Link to="/category/4" className="hover:text-[#003d9b] transition-colors">Audio</Link></li>
+              <li><Link to="/category/5" className="hover:text-[#003d9b] transition-colors">Smartwatches</Link></li>
+              <li><Link to="/category/6" className="hover:text-[#003d9b] transition-colors">Accessories</Link></li>
             </ul>
           </div>
 
@@ -47,7 +50,6 @@ export default function Footer() {
             </h3>
             <ul className="flex flex-col gap-4 text-[13px] text-[#191c1d]/60 font-medium">
               <li><Link to="/contact" className="hover:text-[#003d9b] transition-colors">Contact Us</Link></li>
-              <li><Link to="/track-order" className="hover:text-[#003d9b] transition-colors">Track Order</Link></li>
               <li><Link to="/returns" className="hover:text-[#003d9b] transition-colors">Returns & Exchanges</Link></li>
               <li><Link to="/faq" className="hover:text-[#003d9b] transition-colors">FAQ</Link></li>
             </ul>
@@ -60,7 +62,7 @@ export default function Footer() {
             </h3>
             <div className="flex flex-col gap-4 text-[13px] text-[#191c1d]/60 font-medium">
               <p className="leading-relaxed">
-                123 Innovation Drive<br />
+                Street.63, Dekcho Damdin St. (154)<br />
                 Phnom Penh, Cambodia
               </p>
               <p>

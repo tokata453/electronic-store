@@ -106,8 +106,8 @@ export default function Header() {
         <nav className="hidden lg:block ml-4">
           <ul className="flex items-center gap-6 text-[12px] font-semibold tracking-[0.05em] uppercase">
             <li><Link to="/products" className="text-[#191c1d] hover:text-[#003d9b] transition-colors">Products</Link></li>
-            <li><Link to="/contact" className="text-[#191c1d]/70 hover:text-[#003d9b] transition-colors">Contact</Link></li>
-            <li><Link to="/track-order" className="text-[#191c1d]/70 hover:text-[#003d9b] transition-colors">Track Order</Link></li>
+            <li><Link to="/trending" className="text-[#191c1d]/70 hover:text-[#003d9b] transition-colors">Trending</Link></li>
+            <li><Link to="/contact" className="text-[#191c1d]/70 hover:text-[#003d9b] transition-colors">Contact Us</Link></li>
           </ul>
         </nav>
       </div>
@@ -149,7 +149,6 @@ export default function Header() {
             <div className="absolute right-0 mt-2 w-48 bg-white/95 backdrop-blur-[12px] border border-[#191c1d]/5 shadow-[0_20px_40px_rgba(25,28,29,0.08)] rounded-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform origin-top-right group-hover:translate-y-0 translate-y-2 overflow-hidden">
               <ul className="py-2 text-sm text-[#191c1d]">
                 <li><Link to="/profile" className="block px-5 py-2.5 hover:bg-[#f3f4f5] hover:text-[#003d9b] transition-colors">My Profile</Link></li>
-                <li><Link to="/orders" className="block px-5 py-2.5 hover:bg-[#f3f4f5] hover:text-[#003d9b] transition-colors">My Orders</Link></li>
                 <li className="mt-1 pt-1 border-t border-[#191c1d]/5">
                   <button onClick={handleLogout} className="w-full text-left px-5 py-2.5 hover:bg-[#f3f4f5] text-[#191c1d]/70 transition-colors">Sign Out</button>
                 </li>

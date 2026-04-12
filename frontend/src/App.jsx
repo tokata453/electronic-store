@@ -17,6 +17,9 @@ import ProductPage from './pages/ProductPage';
 import TrendingPage from './pages/TrendingPage';
 import OnSalePage from './pages/OnSalePage';
 import CartPage from './pages/CartPage';
+import CheckoutPage from './pages/CheckoutPage';
+import AccountPage from './pages/AccountPage';
+
 
 const router = createBrowserRouter([
   {
@@ -58,6 +61,14 @@ const router = createBrowserRouter([
       {
         path: "/cart",
         element: <CartPage />
+      },
+      {
+        path: "/checkout",
+        element: <CheckoutPage />
+      },
+      {
+        path: "/profile",
+        element: <AccountPage />
       }
     ],
   },
