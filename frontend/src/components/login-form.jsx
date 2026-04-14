@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, Link, useLocation } from "react-router-dom"; // Added useLocation
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -7,18 +7,24 @@ import { Field, FieldGroup, FieldLabel, FieldDescription } from "@/components/ui
 import { Input } from "@/components/ui/input";
 import { FaFacebook } from "react-icons/fa";
 import { FcGoogle } from "react-icons/fc";
-import { FiEye, FiEyeOff } from "react-icons/fi"; // Added these
-
+import { FiEye, FiEyeOff } from "react-icons/fi";
+import { toast } from "react-hot-toast";
 import { authService } from "@/services/authentication";
+import { mergeCarts } from "@/services/cart"; // Added this
 
 export default function LoginForm({ className, ...props }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false); // New state
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Look for a redirect URL (e.g., if they came from Checkout)
+  const searchParams = new URLSearchParams(location.search);
+  const redirectUrl = searchParams.get('redirect') || '/';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -31,8 +37,23 @@ export default function LoginForm({ className, ...props }) {
       if (result.success) {
         localStorage.setItem("token", result.data.token);
         localStorage.setItem("user", JSON.stringify(result.data.user));
+
+        // CHECK FOR GUEST CART MERGE
+        const guestSessionId = localStorage.getItem('guest_session_id');
+        if (guestSessionId) {
+          try {
+            await mergeCarts(guestSessionId);
+            // Optionally clear the guest session ID after a successful merge
+            localStorage.removeItem('guest_session_id'); 
+          } catch (mergeErr) {
+            console.error("Failed to merge cart, but login successful", mergeErr);
+          }
+        }
+        toast.success("Login successful! Welcome back.");
+        // Redirect Admin or send User back to where they came from
         if (result.data.user.role === "admin") navigate("/admin/products");
-        else navigate("/");
+        else navigate(redirectUrl); 
+
       } else {
         setError(result.message || "Invalid email or password.");
       }
@@ -46,13 +67,19 @@ export default function LoginForm({ className, ...props }) {
   return (
     <div className={cn("flex items-center justify-center min-h-[85vh] bg-[#f8f9fa] p-5 font-sans w-full", className)} {...props}>
       <div className="w-full max-w-md">
+        {/* If they were redirected from checkout, show a friendly message */}
+        {redirectUrl.includes('checkout') && (
+            <div className="mb-4 p-4 bg-blue-50 border border-blue-200 text-blue-800 rounded-xl text-center text-sm font-medium">
+                Please sign in to complete your checkout.
+            </div>
+        )}
         <Card className="bg-white border-0 shadow-[0_20px_40px_rgba(25,28,29,0.06)] rounded-2xl overflow-hidden">
           <CardHeader className="text-center pt-10 pb-6 px-8">
             <CardTitle className="text-2xl font-bold text-[#003d9b] tracking-tight">
               Welcome Back
             </CardTitle>
             <CardDescription className="text-[#191c1d]/60 text-sm mt-2">
-              Enter your credentials to access your gallery.
+              Enter your credentials to access your account.
             </CardDescription>
           </CardHeader>
           
@@ -87,7 +114,6 @@ export default function LoginForm({ className, ...props }) {
                       Forgot password?
                     </a>
                   </div>
-                  {/* Password Toggle Wrapper */}
                   <div className="relative">
                     <Input 
                       id="password" 
@@ -155,7 +181,8 @@ export default function LoginForm({ className, ...props }) {
 
                   <FieldDescription className="text-center mt-6 text-sm text-[#191c1d]/60">
                     Don&apos;t have an account?{" "}
-                    <Link to="/register" className="text-[#003d9b] font-semibold hover:underline transition-all">
+                    {/* Pass the redirect URL to the register page so it remembers where to go! */}
+                    <Link to={`/register?redirect=${encodeURIComponent(redirectUrl)}`} className="text-[#003d9b] font-semibold hover:underline transition-all">
                       Create an account
                     </Link>
                   </FieldDescription>

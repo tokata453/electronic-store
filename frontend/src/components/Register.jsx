@@ -4,6 +4,8 @@ import { FcGoogle } from "react-icons/fc";
 import { FaFacebook } from "react-icons/fa";
 import { FiEye, FiEyeOff, FiAlertCircle } from "react-icons/fi";
 import { authService } from "@/services/authentication"; 
+import { toast } from "react-hot-toast";
+
 
 export default function Register() {
   const [form, setForm] = useState({ firstName: "", lastName: "", email: "", password: "" });
@@ -76,11 +78,13 @@ export default function Register() {
       if (result.success) {
         localStorage.setItem("token", result.data.token);
         localStorage.setItem("user", JSON.stringify(result.data.user));
+        toast.success("Account created successfully!");
         navigate("/");
       } else {
         setApiError(result.message || "Registration failed. Please try again.");
       }
     } catch (err) {
+      toast.error("Registration failed.");
       setApiError("Failed to connect to the server.");
     } finally {
       setIsLoading(false);
@@ -213,9 +217,9 @@ export default function Register() {
 
           <p className="text-[13px] text-[#191c1d]/60 mb-6 leading-relaxed">
             By signing up I agree to the {" "}
-            <a href="#" className="text-[#003d9b] font-medium hover:underline">Privacy Policy</a>{" "}
+            <a href="/help?tab=privacy" className="text-[#003d9b] font-medium hover:underline">Privacy Policy</a>{" "}
             and{" "}
-            <a href="#" className="text-[#003d9b] font-medium hover:underline">Terms & Conditions</a>
+            <a href="/help?tab=terms" className="text-[#003d9b] font-medium hover:underline">Terms & Conditions</a>
           </p>
 
           <button 

@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Star } from "lucide-react";
 import { addToCart } from "@/services/cart"; // Import the service
+import { toast } from "react-hot-toast";
+
 
 export default function ProductCard({ product }) {
     const imageUrl = product?.imageUrls?.[0] || product?.images?.[0] || 'placeholder.png';
@@ -19,6 +21,7 @@ export default function ProductCard({ product }) {
         try {
             await addToCart(product.id, 1);
             // Optionally: show a success toast here
+            toast.success(`${product.name} added to cart!`);
             console.log(`Successfully added ${product.name} to cart`);
         } catch (error) {
             // Optionally: show an error toast here

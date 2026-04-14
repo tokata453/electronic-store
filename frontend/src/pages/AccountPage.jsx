@@ -23,7 +23,15 @@ export default function AccountPage() {
   const [message, setMessage] = useState("");
   const [isEditingAddress, setIsEditingAddress] = useState(false);
 
+  // AUTH CHECK & PROFILE FETCH
   useEffect(() => {
+    // 1. Immediate local check
+    const token = localStorage.getItem("token");
+    if (!token) {
+      navigate("/login");
+      return;
+    }
+
     const fetchProfile = async () => {
       try {
         const result = await getUserProfile();
@@ -35,10 +43,15 @@ export default function AccountPage() {
         }
       } catch (err) {
         console.error("Failed to load profile", err);
+        // 2. Server check: If the token is invalid/expired, kick them out
+        if (err.response?.status === 401 || err.message?.includes("401")) {
+          localStorage.removeItem("token");
+          navigate("/login");
+        }
       }
     };
     fetchProfile();
-  }, []);
+  }, [navigate]);
 
   useEffect(() => {
     if (activeTab === "orders") {
@@ -145,7 +158,6 @@ export default function AccountPage() {
               <Package size={18} /> Orders
             </div>
 
-            {/* Logout button moved up to just below the navigation */}
             <div className="mt-4 pt-4 border-t border-gray-100/50">
               <div 
                 onClick={handleLogout}

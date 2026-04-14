@@ -19,6 +19,9 @@ import OnSalePage from './pages/OnSalePage';
 import CartPage from './pages/CartPage';
 import CheckoutPage from './pages/CheckoutPage';
 import AccountPage from './pages/AccountPage';
+import { Toaster } from 'react-hot-toast';
+import HelpCenterPage from './pages/HelpCenterPage';
+import ContactPage from './pages/ContactPage';
 
 
 const router = createBrowserRouter([
@@ -67,8 +70,16 @@ const router = createBrowserRouter([
         element: <CheckoutPage />
       },
       {
-        path: "/profile",
+        path: "/account",
         element: <AccountPage />
+      },
+      {
+        path: "/help",
+        element: <HelpCenterPage />
+      },
+      {
+        path: "/contact",
+        element: <ContactPage />
       }
     ],
   },
@@ -118,6 +129,19 @@ const router = createBrowserRouter([
 export default function App() {
   return (
     <ThemeProvider>
+      <Toaster 
+        position="top-center" 
+        toastOptions={{ 
+          duration: 3000,
+          style: {
+            background: '#191c1d',
+            color: '#fff',
+            fontSize: '14px',
+            fontWeight: 'bold',
+            borderRadius: '10px'
+          }
+        }} 
+      />
       <RouterProvider router={router} />
     </ThemeProvider>
   );
