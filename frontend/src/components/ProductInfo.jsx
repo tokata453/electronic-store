@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Star, Minus, Plus } from "lucide-react";
 import { addToCart } from "@/services/cart"; // Import the service
+import { toast } from "react-hot-toast";
 
 export default function ProductInfo({ product }) {
     const price = parseFloat(product.price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -23,10 +24,12 @@ export default function ProductInfo({ product }) {
         setIsAdding(true);
         try {
             await addToCart(product.id, quantity);
+            toast.success(`${quantity}x ${product.name} added to cart!`);
             console.log(`Successfully added ${quantity} of ${product.name} to cart`);
             // Reset quantity after successful add
             setQuantity(1);
         } catch (error) {
+            toast.error("Failed to add to cart");
             console.error("Error adding to cart", error);
         } finally {
             setIsAdding(false);
@@ -56,7 +59,9 @@ export default function ProductInfo({ product }) {
                             <Star 
                                 key={i} 
                                 size={14} 
-                                className={isFilled ? "fill-[#191c1d] text-[#191c1d]" : "text-[#191c1d]/20"} 
+                                // UPDATED: Match the ProductCard star colors
+                                fill={isFilled ? "#FFC107" : "none"} 
+                                stroke={isFilled ? "#FFC107" : "#E1E3E4"} 
                             />
                         );
                     })}
@@ -73,8 +78,9 @@ export default function ProductInfo({ product }) {
                         <span className="text-[32px] font-bold text-[#191c1d] tracking-tight">${salePrice}</span>
                         <span className="text-[18px] text-[#191c1d]/40 line-through font-medium tracking-tight">${price}</span>
                         {product.badge && (
-                            <span className="ml-2 bg-[#191c1d] text-white text-[9px] font-bold px-3 py-1.5 uppercase tracking-[0.15em] rounded-sm transform -translate-y-1">
-                                {product.badge}
+                            // UPDATED: Changed bg-[#191c1d] to bg-[#003d9b] to match ProductCard
+                            <span className="ml-2 bg-[#003d9b] text-white text-[9px] font-bold px-3 py-1.5 uppercase tracking-[0.15em] rounded-sm transform -translate-y-1">
+                                {product.badge === 'Hot' ? 'Trending' : product.badge}
                             </span>
                         )}
                     </>

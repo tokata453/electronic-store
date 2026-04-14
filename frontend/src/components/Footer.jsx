@@ -50,8 +50,8 @@ export default function Footer() {
             </h3>
             <ul className="flex flex-col gap-4 text-[13px] text-[#191c1d]/60 font-medium">
               <li><Link to="/contact" className="hover:text-[#003d9b] transition-colors">Contact Us</Link></li>
-              <li><Link to="/returns" className="hover:text-[#003d9b] transition-colors">Returns & Exchanges</Link></li>
-              <li><Link to="/faq" className="hover:text-[#003d9b] transition-colors">FAQ</Link></li>
+              <li><Link to="/help?tab=shipping" className="hover:text-[#003d9b] transition-colors">Returns & Exchanges</Link></li>
+              <li><Link to="/help?tab=faq" className="hover:text-[#003d9b] transition-colors">FAQ</Link></li>
             </ul>
           </div>
 
@@ -86,9 +86,9 @@ export default function Footer() {
           </div>
 
           <ul className="flex flex-wrap justify-center items-center gap-6 md:gap-10 text-[10px] font-bold text-[#191c1d]/40 uppercase tracking-[0.15em]">
-            <li><Link to="/privacy" className="hover:text-[#003d9b] transition-colors">Privacy</Link></li>
-            <li><Link to="/terms" className="hover:text-[#003d9b] transition-colors">Terms</Link></li>
-            <li><Link to="/shipping" className="hover:text-[#003d9b] transition-colors">Shipping</Link></li>
+            <li><Link to="/help?tab=privacy" className="hover:text-[#003d9b] transition-colors">Privacy</Link></li>
+            <li><Link to="/help?tab=terms" className="hover:text-[#003d9b] transition-colors">Terms</Link></li>
+            <li><Link to="/help?tab=shipping" className="hover:text-[#003d9b] transition-colors">Shipping</Link></li>
           </ul>
 
           <div className="text-[10px] font-bold text-[#191c1d]/40 uppercase tracking-[0.15em]">

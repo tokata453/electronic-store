@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { placeOrder } from "@/services/order";
 import { getCart } from "@/services/cart";
-import { getUserProfile } from "@/services/user"; // <-- Import the user service
+import { getUserProfile } from "@/services/user";
 import { Lock, ArrowRight, CreditCard, ShieldCheck, Info } from "lucide-react";
 
 export default function CheckoutPage() {
@@ -25,8 +25,15 @@ export default function CheckoutPage() {
     cvv: ""
   });
 
+  // AUTH CHECK & DATA FETCH
   useEffect(() => {
-    // 1. Fetch Cart Data
+    // 1. Immediate local check
+    const token = localStorage.getItem("token");
+    if (!token) {
+      navigate("/login");
+      return;
+    }
+
     const fetchCart = async () => {
       try {
         const cartData = await getCart();
@@ -36,13 +43,11 @@ export default function CheckoutPage() {
       }
     };
     
-    // 2. Fetch User Profile to autofill
     const fetchUserProfile = async () => {
       try {
         const result = await getUserProfile();
         if (result.success && result.data.user) {
           const user = result.data.user;
-          // Pre-fill the form with whatever data exists!
           setForm(prevForm => ({
             ...prevForm,
             fullName: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
@@ -55,15 +60,17 @@ export default function CheckoutPage() {
           }));
         }
       } catch (err) {
-        // We don't need to throw a big error if profile fetch fails, 
-        // the user can just type it in manually.
-        console.error("Could not fetch user profile for autofill");
+        // 2. Server check: Kick out if token is expired/invalid
+        if (err.response?.status === 401 || err.message?.includes("401")) {
+          localStorage.removeItem("token");
+          navigate("/login");
+        }
       }
     };
 
     fetchCart();
-    fetchUserProfile(); // Trigger the autofill fetch
-  }, []);
+    fetchUserProfile();
+  }, [navigate]);
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
