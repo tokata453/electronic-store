@@ -22,7 +22,7 @@ import AccountPage from './pages/AccountPage';
 import { Toaster } from 'react-hot-toast';
 import HelpCenterPage from './pages/HelpCenterPage';
 import ContactPage from './pages/ContactPage';
-
+import HomeCategoriesPage from './pages/HomeCategoriesPage';
 
 const router = createBrowserRouter([
   {
@@ -80,7 +80,11 @@ const router = createBrowserRouter([
       {
         path: "/contact",
         element: <ContactPage />
-      }
+      },
+      {
+        path: "/categories",
+        element: <HomeCategoriesPage />
+      },
     ],
   },
 
