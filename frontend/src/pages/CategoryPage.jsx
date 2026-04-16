@@ -57,7 +57,7 @@ export default function CategoryPage() {
       <nav className="flex items-center text-[10px] font-bold tracking-[0.15em] uppercase text-[#191c1d]/40 mb-4">
         <Link to="/" className="hover:text-[#003d9b] transition-colors">Home</Link>
         <span className="mx-2">/</span>
-        <Link to="/products" className="hover:text-[#003d9b] transition-colors">Categories</Link>
+        <Link to="/categories" className="hover:text-[#003d9b] transition-colors">Categories</Link>
         <span className="mx-2">/</span>
         <span className="text-[#191c1d]">{category ? category.name : "..."}</span>
       </nav>

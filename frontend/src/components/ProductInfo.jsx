@@ -126,7 +126,7 @@ export default function ProductInfo({ product }) {
                         <button 
                             onClick={() => handleQuantityChange('decrease')}
                             disabled={quantity <= 1 || product.stock <= 0}
-                            className="text-[#191c1d]/60 hover:text-[#191c1d] disabled:opacity-30 transition-colors"
+                            className="cursor-pointer text-[#191c1d]/60 hover:text-[#191c1d] disabled:opacity-30 transition-colors"
                         >
                             <Minus size={16} />
                         </button>
@@ -134,7 +134,7 @@ export default function ProductInfo({ product }) {
                         <button 
                             onClick={() => handleQuantityChange('increase')}
                             disabled={quantity >= product.stock || product.stock <= 0}
-                            className="text-[#191c1d]/60 hover:text-[#191c1d] disabled:opacity-30 transition-colors"
+                            className="cursor-pointer text-[#191c1d]/60 hover:text-[#191c1d] disabled:opacity-30 transition-colors"
                         >
                             <Plus size={16} />
                         </button>
@@ -143,7 +143,7 @@ export default function ProductInfo({ product }) {
                     <button 
                         disabled={isAdding || product.stock <= 0}
                         onClick={handleAddToCart}
-                        className="flex-1 bg-gradient-to-r from-[#003d9b] to-[#0052cc] text-white text-[13px] font-bold px-12 h-[60px] rounded-xl shadow-[0_15px_30px_rgba(0,61,155,0.2)] hover:shadow-[0_20px_40px_rgba(0,61,155,0.3)] hover:-translate-y-1 active:translate-y-0 transition-all uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none"
+                        className="flex-1 cursor-pointer bg-gradient-to-r from-[#003d9b] to-[#0052cc] text-white text-[13px] font-bold px-12 h-[60px] rounded-xl shadow-[0_15px_30px_rgba(0,61,155,0.2)] hover:shadow-[0_20px_40px_rgba(0,61,155,0.3)] hover:-translate-y-1 active:translate-y-0 transition-all uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none"
                     >
                         {isAdding ? "Adding to Cart..." : product.stock > 0 ? "Add to Cart" : "Out of Stock"}
                     </button>

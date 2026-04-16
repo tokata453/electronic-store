@@ -64,7 +64,7 @@ export default function ProductGalleryLayout({
               <button 
                 onClick={handleApplyFilters}
                 disabled={isLoading}
-                className="w-full bg-[#003d9b] hover:bg-[#003d9b]/90 text-white font-bold text-[13px] py-3.5 rounded-lg shadow-[0_10px_20px_rgba(0,61,155,0.15)] transition-all disabled:opacity-50"
+                className="cursor-pointer w-full bg-[#003d9b] hover:bg-[#003d9b]/90 text-white font-bold text-[13px] py-3.5 rounded-lg shadow-[0_10px_20px_rgba(0,61,155,0.15)] transition-all disabled:opacity-50"
               >
                 Apply Filters
               </button>
@@ -124,7 +124,7 @@ export default function ProductGalleryLayout({
               <button 
                 onClick={() => handlePageChange(currentPage - 1)}
                 disabled={currentPage === 1}
-                className="w-10 h-10 flex items-center justify-center rounded-lg border border-[#191c1d]/10 text-[#191c1d]/40 hover:text-[#003d9b] hover:border-[#003d9b] disabled:opacity-30 transition-all"
+                className="cursor-pointer w-10 h-10 flex items-center justify-center rounded-lg border border-[#191c1d]/10 text-[#191c1d]/40 hover:text-[#003d9b] hover:border-[#003d9b] disabled:opacity-30 transition-all"
               >
                 <ChevronLeft size={18} />
               </button>
@@ -133,7 +133,7 @@ export default function ProductGalleryLayout({
                 <button
                   key={i + 1}
                   onClick={() => handlePageChange(i + 1)}
-                  className={`w-10 h-10 flex items-center justify-center rounded-lg text-[13px] font-bold transition-all ${
+                  className={`cursor-pointer w-10 h-10 flex items-center justify-center rounded-lg text-[13px] font-bold transition-all ${
                     currentPage === i + 1 
                       ? 'bg-[#003d9b] text-white shadow-[0_5px_15px_rgba(0,61,155,0.2)]' 
                       : 'text-[#191c1d]/60 hover:bg-[#f3f4f5] hover:text-[#191c1d]'
@@ -146,7 +146,7 @@ export default function ProductGalleryLayout({
               <button 
                 onClick={() => handlePageChange(currentPage + 1)}
                 disabled={currentPage === pagination.pages}
-                className="w-10 h-10 flex items-center justify-center rounded-lg border border-[#191c1d]/10 text-[#191c1d]/40 hover:text-[#003d9b] hover:border-[#003d9b] disabled:opacity-30 transition-all"
+                className="cursor-pointer w-10 h-10 flex items-center justify-center rounded-lg border border-[#191c1d]/10 text-[#191c1d]/40 hover:text-[#003d9b] hover:border-[#003d9b] disabled:opacity-30 transition-all"
               >
                 <ChevronRight size={18} />
               </button>

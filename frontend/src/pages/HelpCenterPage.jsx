@@ -8,7 +8,7 @@ export default function HelpCenterPage() {
     const [searchParams, setSearchParams] = useSearchParams();
     const activeTab = searchParams.get("tab") || "faq";
 
-    const [expandedFaq, setExpandedFaq] = useState(1);
+    const [expandedFaqs, setExpandedFaqs] = useState([]);
 
     // --- STATIC DATA ---
     const categories = [
@@ -57,16 +57,23 @@ export default function HelpCenterPage() {
 
             <div className="space-y-4">
                 {faqs.map((faq) => {
-                    const isOpen = expandedFaq === faq.id;
+                    const isOpen = expandedFaqs.includes(faq.id);
                     return (
                         <div 
                             key={faq.id} 
                             className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden transition-all duration-200"
                         >
                             <button
-                                onClick={() => setExpandedFaq(isOpen ? null : faq.id)}
-                                className="w-full flex items-center justify-between p-6 text-left focus:outline-none"
-                            >
+                            // FIXED: Toggle logic that adds or removes the ID from the array
+                            onClick={() => {
+                                setExpandedFaqs(prev => 
+                                    isOpen 
+                                        ? prev.filter(id => id !== faq.id) // Remove it if it's already open
+                                        : [...prev, faq.id]                // Add it if it's closed
+                                );
+                            }}
+                            className="cursor-pointer w-full flex items-center justify-between p-6 text-left focus:outline-none"
+                        >
                                 <span className="text-[16px] font-bold text-[#191c1d] pr-4 leading-snug">
                                     {faq.question}
                                 </span>
@@ -240,8 +247,8 @@ export default function HelpCenterPage() {
                             return (
                                 <button
                                     key={cat.id}
-                                    onClick={() => setActiveTab(cat.id)}
-                                    className={`w-full flex items-center gap-3.5 px-5 py-3.5 rounded-xl text-left text-[15px] font-bold transition-all ${
+                                    onClick={() => setSearchParams({ tab: cat.id })}
+                                    className={`cursor-pointer w-full flex items-center gap-3.5 px-5 py-3.5 rounded-xl text-left text-[15px] font-bold transition-all ${
                                         isActive 
                                             ? "bg-white text-[#003d9b] shadow-[0_2px_10px_rgba(0,0,0,0.02)] border border-gray-100" 
                                             : "text-gray-500 hover:bg-gray-100 hover:text-[#191c1d]"

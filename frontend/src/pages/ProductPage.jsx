@@ -49,7 +49,7 @@ export default function ProductPage() {
             <nav className="flex items-center text-[10px] font-bold tracking-[0.15em] uppercase text-[#191c1d]/40 mb-10">
                 <Link to="/" className="hover:text-[#003d9b] transition-colors">Home</Link>
                 <span className="mx-2">/</span>
-                <Link to="/products" className="hover:text-[#003d9b] transition-colors">Categories</Link>
+                <Link to="/categories" className="hover:text-[#003d9b] transition-colors">Categories</Link>
                 <span className="mx-2">/</span>
                 <Link to={`/category/${product.category?.id}`} className="hover:text-[#003d9b] transition-colors">
                     {product.category?.name || 'Category'}

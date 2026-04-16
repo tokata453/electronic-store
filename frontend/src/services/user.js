@@ -19,3 +19,17 @@ export const updateUserProfile = async (userData) => {
     throw error;
   }
 };
+
+export const uploadAvatar = async (formData) => {
+  try {
+    const response = await api.post('/api/upload/avatar', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error uploading avatar:", error);
+    throw error;
+  }
+};

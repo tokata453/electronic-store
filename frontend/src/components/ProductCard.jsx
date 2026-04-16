@@ -89,7 +89,7 @@ export default function ProductCard({ product }) {
                     <button 
                         onClick={handleAddToCart}
                         disabled={isAdding || product.stock <= 0}
-                        className="bg-gradient-to-r from-[#003d9b] to-[#0052cc] text-white text-[11px] font-bold px-6 py-3 rounded-lg shadow-[0_10px_20px_rgba(0,61,155,0.15)] hover:shadow-[0_15px_25px_rgba(0,61,155,0.25)] hover:-translate-y-0.5 active:translate-y-0 transition-all uppercase tracking-wider disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+                        className="cursor-pointer bg-gradient-to-r from-[#003d9b] to-[#0052cc] text-white text-[11px] font-bold px-6 py-3 rounded-lg shadow-[0_10px_20px_rgba(0,61,155,0.15)] hover:shadow-[0_15px_25px_rgba(0,61,155,0.25)] hover:-translate-y-0.5 active:translate-y-0 transition-all uppercase tracking-wider disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
                     >
                         {isAdding ? "Adding..." : product.stock > 0 ? "Add to Cart" : "Sold Out"}
                     </button>
