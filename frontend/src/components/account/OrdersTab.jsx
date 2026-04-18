@@ -62,22 +62,10 @@ export default function OrdersTab() {
                 <div className="space-y-4">
                   {order.items?.map(item => {
                     let imageUrl = '/placeholder.png';
-                    if (item.product?.imageUrls?.[0]) imageUrl = item.product.imageUrls[0];
-                    else if (item.product?.images?.[0]) imageUrl = item.product.images[0];
-                    else if (item.productImage) {
-                      let rawImage = item.productImage;
-                      if (typeof rawImage === 'string' && rawImage.startsWith('[')) {
-                        try {
-                          const parsed = JSON.parse(rawImage);
-                          if (parsed && parsed.length > 0) imageUrl = parsed[0];
-                        } catch(e) {}
-                      } else {
-                        imageUrl = rawImage;
-                      }
-                    }
-                    if (imageUrl !== '/placeholder.png' && !imageUrl.startsWith('http')) {
-                      imageUrl = `https://d20rb27rhcs9jr.cloudfront.net/${imageUrl.replace(/^\//, '')}`;
-                    }
+                    if (item.productImageUrl) imageUrl = item.productImageUrl;
+                    else if (item.product?.imageUrls?.[0]) imageUrl = item.product.imageUrls[0];
+                    else if (typeof item.productImage === "string" && item.productImage.startsWith("http")) imageUrl = item.productImage;
+
                     return (
                       <div key={item.id} className="flex gap-4">
                         <div className="w-16 h-16 bg-gray-50 rounded-lg flex items-center justify-center p-2 border border-gray-100 flex-shrink-0">

@@ -3,6 +3,7 @@ const { Order, OrderItem, Product, User, Cart, CartItem } = require('../models')
 const { sequelize } = require('../models');
 const { Op } = require('sequelize');
 const appError = require('../utils/appError');
+const { generatePresignedUrl } = require('../utils/bucket');
 
 const VALID_ORDER_STATUSES = ['pending', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded'];
 const VALID_PAYMENT_METHODS = ['credit_card', 'paypal', 'cod', 'bank_transfer', 'aba', 'acleda'];
@@ -24,6 +25,45 @@ const validateAddress = (address) => {
 
   const requiredFields = ['fullName', 'phone', 'addressLine1', 'city'];
   return requiredFields.every(field => typeof address[field] === 'string' && address[field].trim());
+};
+
+const addPresignedUrlsToOrderItems = async (items = []) => {
+  if (!items.length) return [];
+
+  const itemsJson = items.map((item) => (item.toJSON ? item.toJSON() : item));
+
+  return Promise.all(
+    itemsJson.map(async (item) => {
+      item.productImageUrl = null;
+
+      if (item.productImage) {
+        if (typeof item.productImage === 'string' && item.productImage.startsWith('http')) {
+          item.productImageUrl = item.productImage;
+        } else {
+          try {
+            item.productImageUrl = await generatePresignedUrl(item.productImage);
+          } catch (error) {
+            console.error('Error generating order item image URL:', error);
+          }
+        }
+      }
+
+      return item;
+    })
+  );
+};
+
+const addPresignedUrlsToOrders = async (orders = []) => {
+  if (!orders.length) return [];
+
+  const ordersJson = orders.map((order) => (order.toJSON ? order.toJSON() : order));
+
+  return Promise.all(
+    ordersJson.map(async (order) => {
+      order.items = await addPresignedUrlsToOrderItems(order.items || []);
+      return order;
+    })
+  );
 };
 
 const buildOrderSummary = async (items, transaction) => {
@@ -218,10 +258,12 @@ const getOrders = async (req, res, next) => {
       order: [['createdAt', 'DESC']]
     });
 
+    const ordersWithUrls = await addPresignedUrlsToOrders(orders);
+
     res.status(200).json({
       success: true,
       data: {
-        orders
+        orders: ordersWithUrls
       }
     });
 
@@ -260,10 +302,12 @@ const getOrder = async (req, res, next) => {
       return next(new appError('Not authorized to access this order', 403));
     }
 
+    const [orderWithUrls] = await addPresignedUrlsToOrders([order]);
+
     res.status(200).json({
       success: true,
       data: {
-        order
+        order: orderWithUrls
       }
     });
 
@@ -422,10 +466,12 @@ const getAllOrders = async (req, res, next) => {
       offset: parseInt(offset)
     });
 
+    const ordersWithUrls = await addPresignedUrlsToOrders(orders);
+
     res.status(200).json({
       success: true,
       data: {
-        orders,
+        orders: ordersWithUrls,
         pagination: {
           total: count,
           page: parseInt(page),
