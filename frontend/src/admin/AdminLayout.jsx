@@ -4,9 +4,7 @@ import { useTheme } from "./products/useTheme";
 import {
   BarChart3,
   Package,
-  PlusCircle,
   LayoutGrid,
-  PlusSquare,
   ShoppingCart,
   Users,
   FileText,
@@ -131,22 +129,6 @@ export default function AdminLayout() {
           </NavLink>
 
           <NavLink
-            to="/admin/products/new"
-            end
-            className={({ isActive }) =>
-              `rounded-lg px-3 py-2 text-sm transition
-              ${isActive
-                ? dark ? "bg-slate-800 text-white" : "bg-slate-200 text-slate-900"
-                : dark ? "text-slate-300 hover:bg-slate-800" : "text-slate-600 hover:bg-slate-100"
-              }`
-            }
-          >
-            <span className="flex items-center gap-2">
-              <PlusCircle size={18} /> {!collapsed && "Add Product"}
-            </span>
-          </NavLink>
-
-          <NavLink
             to="/admin/categories"
             end
             className={({ isActive }) =>
@@ -159,22 +141,6 @@ export default function AdminLayout() {
           >
             <span className="flex items-center gap-2">
               <LayoutGrid size={18} /> {!collapsed && "Categories"}
-            </span>
-          </NavLink>
-
-          <NavLink
-            to="/admin/categories/new"
-            end
-            className={({ isActive }) =>
-              `rounded-lg px-3 py-2 text-sm transition
-              ${isActive
-                ? dark ? "bg-slate-800 text-white" : "bg-slate-200 text-slate-900"
-                : dark ? "text-slate-300 hover:bg-slate-800" : "text-slate-600 hover:bg-slate-100"
-              }`
-            }
-          >
-            <span className="flex items-center gap-2">
-              <PlusSquare size={18} /> {!collapsed && "Add Categories"}
             </span>
           </NavLink>
         </nav>
