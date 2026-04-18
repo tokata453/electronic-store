@@ -1,7 +1,18 @@
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useTheme } from "./products/useTheme";
-import { Package, PlusCircle, LayoutGrid, PlusSquare, Settings, LogOut } from "lucide-react";
+import {
+  BarChart3,
+  Package,
+  PlusCircle,
+  LayoutGrid,
+  PlusSquare,
+  ShoppingCart,
+  Users,
+  FileText,
+  Settings,
+  LogOut,
+} from "lucide-react";
 
 export default function AdminLayout() {
   const [collapsed, setCollapsed] = useState(false);
@@ -39,6 +50,70 @@ export default function AdminLayout() {
 
         {/* Navigation */}
         <nav className="flex flex-col gap-2 p-2 flex-1">
+          <NavLink
+            to="/admin/dashboard"
+            end
+            className={({ isActive }) =>
+              `rounded-lg px-3 py-2 text-sm transition
+              ${isActive
+                ? dark ? "bg-slate-800 text-white" : "bg-slate-200 text-slate-900"
+                : dark ? "text-slate-300 hover:bg-slate-800" : "text-slate-600 hover:bg-slate-100"
+              }`
+            }
+          >
+            <span className="flex items-center gap-2">
+              <BarChart3 size={18} /> {!collapsed && "Dashboard"}
+            </span>
+          </NavLink>
+
+          <NavLink
+            to="/admin/orders"
+            end
+            className={({ isActive }) =>
+              `rounded-lg px-3 py-2 text-sm transition
+              ${isActive
+                ? dark ? "bg-slate-800 text-white" : "bg-slate-200 text-slate-900"
+                : dark ? "text-slate-300 hover:bg-slate-800" : "text-slate-600 hover:bg-slate-100"
+              }`
+            }
+          >
+            <span className="flex items-center gap-2">
+              <ShoppingCart size={18} /> {!collapsed && "Orders"}
+            </span>
+          </NavLink>
+
+          <NavLink
+            to="/admin/users"
+            end
+            className={({ isActive }) =>
+              `rounded-lg px-3 py-2 text-sm transition
+              ${isActive
+                ? dark ? "bg-slate-800 text-white" : "bg-slate-200 text-slate-900"
+                : dark ? "text-slate-300 hover:bg-slate-800" : "text-slate-600 hover:bg-slate-100"
+              }`
+            }
+          >
+            <span className="flex items-center gap-2">
+              <Users size={18} /> {!collapsed && "Users"}
+            </span>
+          </NavLink>
+
+          <NavLink
+            to="/admin/reports"
+            end
+            className={({ isActive }) =>
+              `rounded-lg px-3 py-2 text-sm transition
+              ${isActive
+                ? dark ? "bg-slate-800 text-white" : "bg-slate-200 text-slate-900"
+                : dark ? "text-slate-300 hover:bg-slate-800" : "text-slate-600 hover:bg-slate-100"
+              }`
+            }
+          >
+            <span className="flex items-center gap-2">
+              <FileText size={18} /> {!collapsed && "Reports"}
+            </span>
+          </NavLink>
+
           <NavLink
             to="/admin/products"
             end

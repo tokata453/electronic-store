@@ -118,7 +118,7 @@ export async function uploadCategoryImage(id, file) {
   });
 
   return {
-    key: res.data?.data?.key ?? null,
+    key: res.data?.data?.imageKey ?? res.data?.data?.key ?? null,
     imageUrl: res.data?.data?.imageUrl ?? null,
     category: res.data?.data?.category ?? null,
   };
