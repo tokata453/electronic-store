@@ -100,10 +100,12 @@ const updateProfile = async (req, res, next) => {
       attributes: { exclude: ['password'] }
     });
 
+    const updatedUserWithUrls = await addPresignedUrlToUser(updatedUser);
+
     res.status(200).json({
       success: true,
       data: {
-        user: updatedUser
+        user: updatedUserWithUrls
       }
     });
 

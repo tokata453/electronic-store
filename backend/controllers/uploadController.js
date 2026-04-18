@@ -214,7 +214,8 @@ const uploadAvatar = async (req, res, next) => {
             firstName: user.firstName,
             lastName: user.lastName,
             email: user.email,
-            avatar: user.avatar
+            avatar: user.avatar,
+            avatarUrl: presignedUrl
           }
         }
       });

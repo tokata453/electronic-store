@@ -16,7 +16,8 @@ export default function AccountPage() {
     email: "",
     phone: "",
     address: { street: "", city: "", state: "", zipCode: "" },
-    avatar: ""
+    avatar: "",
+    avatarUrl: ""
   });
 
   // AUTH CHECK & PROFILE FETCH

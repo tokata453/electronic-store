@@ -23,7 +23,11 @@ export default function AccountSidebar({ user, setUser, activeTab, changeTab, ha
     try {
       const result = await uploadAvatar(formData);
       if (result.success) {
-        setUser((prev) => ({ ...prev, avatar: result.data.avatarUrl }));
+        setUser((prev) => ({
+          ...prev,
+          avatar: result.data.avatarKey,
+          avatarUrl: result.data.avatarUrl,
+        }));
         toast.success("Profile picture updated!");
       }
     } catch (error) {
@@ -44,15 +48,10 @@ export default function AccountSidebar({ user, setUser, activeTab, changeTab, ha
   // 1. Set the default UI fallback
   let displayAvatar = `https://ui-avatars.com/api/?name=${user.firstName || "U"}&background=003d9b&color=fff`;
 
-  // 2. Format the user's avatar if it exists in the database
-  if (user.avatar) {
-    if (user.avatar.startsWith('http')) {
-      // Handles the immediate upload (full signed URL)
-      displayAvatar = user.avatar;
-    } else {
-      // Handles the page refresh! (Prepends CloudFront URL to the relative DB path)
-      displayAvatar = `https://i-tech-products.s3.ap-southeast-1.amazonaws.com/${user.avatar.replace(/^\//, '')}`;
-    }
+  if (user.avatarUrl) {
+    displayAvatar = user.avatarUrl;
+  } else if (user.avatar && user.avatar.startsWith("http")) {
+    displayAvatar = user.avatar;
   }
 
   return (
