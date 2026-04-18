@@ -25,6 +25,7 @@ export default function ProductsPage() {
       const result = await listProducts({
         search: q,
         categoryId: categoryId || undefined,
+        includeInactive: true,
         page: page
       });
       setItems(result.products);

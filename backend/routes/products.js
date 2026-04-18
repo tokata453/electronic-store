@@ -12,7 +12,7 @@ const {
   updateProduct,
   deleteProduct
 } = require('../controllers/productController');
-const { protect } = require('../middleware/auth');
+const { protect, optionalProtect } = require('../middleware/auth');
 const { admin } = require('../middleware/admin');
 
 /**
@@ -44,7 +44,7 @@ const { admin } = require('../middleware/admin');
       }
     });
  */
-router.get('/', getProducts);
+router.get('/', optionalProtect, getProducts);
 
 router.get('/featured', getFeaturedProducts);
 

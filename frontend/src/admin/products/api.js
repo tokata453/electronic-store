@@ -11,6 +11,7 @@ export async function listProducts({
   isFeatured,
   sortBy,
   order,
+  includeInactive,
   page = 1,
   limit = 20,
 } = {}) {
@@ -23,6 +24,7 @@ export async function listProducts({
     isFeatured,
     sortBy,
     order,
+    includeInactive,
     page,
     limit,
   };

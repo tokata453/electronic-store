@@ -12,9 +12,14 @@ const buildProductWhereClause = ({
   minPrice,
   maxPrice,
   badge,
-  isFeatured
+  isFeatured,
+  includeInactive = false
 }) => {
-  const where = { isActive: true };
+  const where = {};
+
+  if (!includeInactive) {
+    where.isActive = true;
+  }
 
   if (search) {
     where[Op.or] = [
@@ -160,11 +165,17 @@ const getProducts = async (req, res, next) => {
       maxPrice,
       badge,
       isFeatured,
+      includeInactive,
       sortBy = 'createdAt',
       order = 'DESC',
       page = 1,
       limit = 20
     } = req.query;
+
+    const canIncludeInactive =
+      includeInactive === 'true' &&
+      req.user &&
+      req.user.role === 'admin';
 
     const where = buildProductWhereClause({
       search,
@@ -172,7 +183,8 @@ const getProducts = async (req, res, next) => {
       minPrice,
       maxPrice,
       badge,
-      isFeatured
+      isFeatured,
+      includeInactive: canIncludeInactive
     });
 
     const safeSortBy = ALLOWED_SORT_FIELDS.includes(sortBy) ? sortBy : 'createdAt';
