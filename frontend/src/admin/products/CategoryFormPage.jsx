@@ -28,6 +28,7 @@ export default function CategoryFormPage() {
   const [err, setErr] = useState("");
   const [pendingFile, setPendingFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
+  const [imageMarkedForRemoval, setImageMarkedForRemoval] = useState(false);
   const inputRef = useRef(null);
   const [isDragging, setIsDragging] = useState(false);
 
@@ -70,8 +71,12 @@ export default function CategoryFormPage() {
 
   function handleImageFile(file) {
     if (!file || !file.type.startsWith("image/")) return;
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+    }
     setPendingFile(file);
     setPreviewUrl(URL.createObjectURL(file));
+    setImageMarkedForRemoval(false);
   }
 
   function handleDrop(e) {
@@ -93,6 +98,7 @@ export default function CategoryFormPage() {
       icon: value.icon.trim() || null,
       sortOrder: value.sortOrder === "" ? null : Number(value.sortOrder),
       isActive: Boolean(value.isActive),
+      ...(isEdit && imageMarkedForRemoval ? { image: null } : {}),
     };
 
     try {
@@ -132,6 +138,34 @@ export default function CategoryFormPage() {
       setSaving(false);
     }
   }
+
+  async function handleRemoveImage() {
+    setErr("");
+
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
+      setPreviewUrl(null);
+      setPendingFile(null);
+      if (isEdit && value.image) {
+        setImageMarkedForRemoval(true);
+      }
+      return;
+    }
+
+    if (isEdit && value.image) {
+      setImageMarkedForRemoval(true);
+    }
+
+    setValue((prev) => ({ ...prev, imageUrl: null, image: null }));
+  }
+
+  useEffect(() => {
+    return () => {
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
+    };
+  }, [previewUrl]);
 
   const inputCls = `w-full rounded-lg border px-3 py-2 outline-none transition
     ${dark
@@ -283,7 +317,8 @@ export default function CategoryFormPage() {
                   />
                   <button
                     type="button"
-                    onClick={() => { setPendingFile(null); setPreviewUrl(null); setValue((prev) => ({ ...prev, imageUrl: null, image: null })); }}
+                    onClick={handleRemoveImage}
+                    disabled={uploadingImage || saving}
                     className="absolute -right-2 -top-2 rounded-full bg-red-500 px-1.5 py-0.5 text-xs font-medium text-white hover:bg-red-600"
                   >
                     ✕

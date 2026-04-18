@@ -1,7 +1,11 @@
-import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import { createBrowserRouter, Navigate, RouterProvider } from 'react-router-dom';
 import MainLayout from './layouts/MainLayout';
 import AdminGuard from "./admin/AdminGuard";
 import AdminLayout from "./admin/AdminLayout";
+import DashboardPage from './admin/DashboardPage';
+import OrdersPage from './admin/OrdersPage';
+import UsersPage from './admin/UsersPage';
+import ReportsPage from './admin/ReportsPage';
 import Home from './pages/Home';
 import LoginForm from './components/login-form';
 import Register from './components/Register';
@@ -96,6 +100,26 @@ const router = createBrowserRouter([
       {
         element: <AdminLayout />,
         children: [
+          {
+            index: true,
+            element: <Navigate to="dashboard" replace />,
+          },
+          {
+            path: 'dashboard',
+            element: <DashboardPage />,
+          },
+          {
+            path: 'orders',
+            element: <OrdersPage />,
+          },
+          {
+            path: 'users',
+            element: <UsersPage />,
+          },
+          {
+            path: 'reports',
+            element: <ReportsPage />,
+          },
           {
             path: "products",
             element: <ProductsPage />,
