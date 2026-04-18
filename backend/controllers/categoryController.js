@@ -1,7 +1,7 @@
 // controllers/categoryController.js
 const { Category, Product } = require('../models');
 const AppError = require('../utils/appError');
-const { generatePresignedUrl } = require('../utils/bucket');
+const { deleteFile, generatePresignedUrl } = require('../utils/bucket');
 
 const addPresignedUrlToCategories = async (categories) => {
   if (!categories || categories.length === 0) return [];
@@ -203,13 +203,18 @@ const updateCategory = async (req, res, next) => {
       return next(new AppError('Category not found', 404));
     }
 
-    // Update category
+    if (req.body.image === null && category.image) {
+      await deleteFile(category.image);
+    }
+
     await category.update(req.body);
+
+    const updatedCategory = await addPresignedUrlToCategory(category);
 
     res.status(200).json({
       success: true,
       data: {
-        category
+        category: updatedCategory
       }
     });
 

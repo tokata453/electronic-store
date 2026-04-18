@@ -1,7 +1,17 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { Backpack, Headphones, Laptop, LayoutGrid, Smartphone, TabletSmartphone, Watch } from "lucide-react";
 import { deleteCategory, listCategories } from "./api";
 import { useTheme } from "./useTheme";
+
+const iconMap = {
+  Smartphone,
+  Laptop,
+  TabletSmartphone,
+  Headphones,
+  Watch,
+  Backpack,
+};
 
 export default function CategoriesPage() {
   const { theme } = useTheme();
@@ -65,7 +75,7 @@ export default function CategoriesPage() {
         <table className="w-full text-left text-sm">
           <thead className={dark ? "bg-slate-950 text-slate-300" : "bg-slate-50 text-slate-600"}>
             <tr>
-              <th className="px-4 py-3">Image</th>
+              <th className="px-4 py-3">Icon</th>
               <th className="px-4 py-3">Name</th>
               <th className="px-4 py-3">Slug</th>
               <th className="px-4 py-3">Sort Order</th>
@@ -90,21 +100,17 @@ export default function CategoriesPage() {
             ) : (
               items.map((cat) => (
                 <tr key={cat.id} className={dark ? "hover:bg-slate-950/40" : "hover:bg-slate-50"}>
+                  {(() => {
+                    const IconComponent = iconMap[cat.icon] || LayoutGrid;
 
-                  {/* Image */}
-                  <td className="px-4 py-3">
-                    {cat.imageUrl ? (
-                      <img
-                        src={cat.imageUrl}
-                        alt={cat.name}
-                        className={`h-12 w-12 rounded-lg object-cover ring-1 ${dark ? "ring-slate-700" : "ring-slate-200"}`}
-                      />
-                    ) : (
-                      <div className={`h-12 w-12 rounded-lg flex items-center justify-center text-xl ${dark ? "bg-slate-800" : "bg-slate-100"}`}>
-                        {cat.icon ?? "📁"}
-                      </div>
-                    )}
-                  </td>
+                    return (
+                      <td className="px-4 py-3">
+                        <div className={`inline-flex h-12 w-12 items-center justify-center rounded-lg ${dark ? "bg-slate-800 text-slate-200" : "bg-slate-100 text-slate-700"}`}>
+                          <IconComponent size={20} strokeWidth={1.8} />
+                        </div>
+                      </td>
+                    );
+                  })()}
 
                   <td className="px-4 py-3 font-medium">{cat.name}</td>
                   <td className={`px-4 py-3 font-mono text-xs ${dark ? "text-slate-400" : "text-slate-500"}`}>{cat.slug}</td>
