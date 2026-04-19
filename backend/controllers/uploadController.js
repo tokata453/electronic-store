@@ -1,7 +1,7 @@
 // controllers/uploadController.js
 const { uploadFile, deleteFile, keyFromUrl, refreshUrl } = require('../utils/bucket');
 const { Product, Category, User } = require('../models');
-const appError = require('../utils/appError');
+const AppError = require('../utils/appError');
 
 // ─────────────────────────────────────────────
 // 📦 PRODUCT IMAGES
@@ -21,12 +21,12 @@ const uploadProductImages = async (req, res, next) => {
     const { productId } = req.params;
 
     if (!req.files || req.files.length === 0) {
-      return next(new appError('Please upload at least one image', 400));
+      return next(new AppError('Please upload at least one image', 400));
     }
 
     const product = await Product.findByPk(productId);
     if (!product) {
-      return next(new appError('Product not found', 404));
+      return next(new AppError('Product not found', 404));
     }
 
     // Upload all files and get presigned URLs
@@ -75,12 +75,12 @@ try {
     const { imageKey } = req.body; // Expecting key, not URL
 
     if (!imageKey) {
-      return next(appError('Image key is required', 400));
+      return next(new AppError('Image key is required', 400));
     }
 
     const product = await Product.findByPk(productId);
     if (!product) {
-      return next(appError('Product not found', 404));
+      return next(new AppError('Product not found', 404));
     }
 
     // Delete from Railway Bucket
@@ -122,12 +122,12 @@ const uploadCategoryImage = async (req, res, next) => {
       const { categoryId } = req.params;
 
       if (!req.file) {
-        return next(appError('Please upload an image', 400));
+        return next(new AppError('Please upload an image', 400));
       }
 
       const category = await Category.findByPk(categoryId);
       if (!category) {
-        return next(appError('Category not found', 404));
+        return next(new AppError('Category not found', 404));
       }
 
       // Delete old image if exists
@@ -177,12 +177,12 @@ const uploadCategoryImage = async (req, res, next) => {
 const uploadAvatar = async (req, res, next) => {
   try {
       if (!req.file) {
-        return next(appError('Please upload an image', 400));
+        return next(new AppError('Please upload an image', 400));
       }
 
       const user = await User.findByPk(req.user.id);
       if (!user) {
-        return next(appError('User not found', 404));
+        return next(new AppError('User not found', 404));
       }
       
 
