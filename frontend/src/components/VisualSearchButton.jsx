@@ -116,6 +116,7 @@ export default function VisualSearchButton() {
         - If it is a 'Dell XPS 15', return 'Laptop'.
         - If it is an 'iPad Pro', return 'Tablet'.
         - If no electronics are visible, output 'Unknown'.
+        - If its a laptop, return with 'Computer' instead of 'Laptop' to be more general.
         Return nothing but the single category word.
       `;
 
