@@ -1,5 +1,7 @@
 const request = require('supertest');
 const app = require('../server');
+const { Op } = require('sequelize');
+const { User, Product, Category, Order, OrderItem, Cart, CartItem } = require('../models');
 
 describe('happy path integration flows', () => {
   const state = {
@@ -43,6 +45,52 @@ describe('happy path integration flows', () => {
 
     expect(register.status).toBe(201);
     state.customerToken = register.body.data.token;
+  });
+
+  afterAll(async () => {
+    if (state.createdOrderId) {
+      await OrderItem.destroy({ where: { orderId: state.createdOrderId } });
+      await Order.destroy({ where: { id: state.createdOrderId } });
+    }
+
+    if (state.createdProductId) {
+      await CartItem.destroy({ where: { productId: state.createdProductId } });
+      await OrderItem.destroy({ where: { productId: state.createdProductId } });
+      await Product.destroy({ where: { id: state.createdProductId }, force: true });
+    }
+
+    if (state.createdCategoryId) {
+      await Product.destroy({ where: { categoryId: state.createdCategoryId }, force: true });
+      await Category.destroy({ where: { id: state.createdCategoryId } });
+    }
+
+    const integrationUsers = await User.findAll({
+      attributes: ['id'],
+      where: {
+        email: {
+          [Op.like]: 'integration_%@example.com'
+        }
+      }
+    });
+
+    const userIds = integrationUsers.map(user => user.id);
+    if (userIds.length) {
+      const orders = await Order.findAll({ attributes: ['id'], where: { userId: userIds } });
+      const orderIds = orders.map(order => order.id);
+      if (orderIds.length) {
+        await OrderItem.destroy({ where: { orderId: orderIds } });
+        await Order.destroy({ where: { id: orderIds } });
+      }
+
+      const carts = await Cart.findAll({ attributes: ['id'], where: { userId: userIds } });
+      const cartIds = carts.map(cart => cart.id);
+      if (cartIds.length) {
+        await CartItem.destroy({ where: { cartId: cartIds } });
+        await Cart.destroy({ where: { id: cartIds } });
+      }
+
+      await User.destroy({ where: { id: userIds }, force: true });
+    }
   });
 
   it('creates, updates, and soft-deletes a category as admin', async () => {

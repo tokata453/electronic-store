@@ -1,7 +1,20 @@
 const request = require('supertest');
 const app = require('../server');
+const { Op } = require('sequelize');
+const { User } = require('../models');
 
 describe('auth endpoints (DB-backed)', () => {
+  afterAll(async () => {
+    await User.destroy({
+      where: {
+        email: {
+          [Op.like]: 'auth_test_%@example.com'
+        }
+      },
+      force: true
+    });
+  });
+
   it('registers a new customer and returns token plus user', async () => {
     const email = `auth_test_${Date.now()}@example.com`;
 
