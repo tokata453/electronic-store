@@ -221,8 +221,10 @@ process.on("SIGTERM", async () => {
   }
 });
 
-// Start the server
-startServer();
+// Start the server unless running tests
+if (process.env.NODE_ENV !== 'test') {
+  startServer();
+}
 
 // Export app for testing
 module.exports = app;

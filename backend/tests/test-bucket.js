@@ -45,15 +45,23 @@ function checkEnvVars() {
 
 // ─── Create S3 client ─────────────────────────
 function createClient() {
+  const region = process.env.BUCKET_REGION || 'us-east-1';
+  const isAws = !process.env.BUCKET_HOST || process.env.BUCKET_HOST.includes('amazonaws.com');
+
   return new S3Client({
-    region: process.env.BUCKET_REGION || 'auto',
-    endpoint: `https://${process.env.BUCKET_HOST}`,
+    region,
+    ...(isAws ? {} : { endpoint: `https://${process.env.BUCKET_HOST}` }),
     credentials: {
       accessKeyId: process.env.BUCKET_ACCESS_KEY_ID,
       secretAccessKey: process.env.BUCKET_SECRET_ACCESS_KEY,
     },
-    forcePathStyle: true,
+    forcePathStyle: !isAws,
   });
+}
+
+function getPublicUrl(bucket, key) {
+  const region = process.env.BUCKET_REGION || 'us-east-1';
+  return `https://${bucket}.s3.${region}.amazonaws.com/${key}`;
 }
 
 // ─── Tests ────────────────────────────────────
@@ -86,7 +94,7 @@ async function runTests() {
       ContentType: 'text/plain',
     }));
 
-    const publicUrl = `https://${process.env.BUCKET_HOST}/${BUCKET}/${TEST_KEY}`;
+    const publicUrl = getPublicUrl(BUCKET, TEST_KEY);
     green(`Upload successful!`);
     console.log(`   URL: ${publicUrl}\n`);
     passed++;
@@ -146,7 +154,7 @@ async function runTests() {
       ContentType: 'image/png',
     }));
 
-    const imageUrl = `https://${process.env.BUCKET_HOST}/${BUCKET}/${imgKey}`;
+    const imageUrl = getPublicUrl(BUCKET, imgKey);
     green(`Image upload successful!`);
     console.log(`   Image URL: ${imageUrl}`);
     console.log(`   Open URL in browser to verify it loads\n`);
