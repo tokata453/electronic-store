@@ -2,7 +2,7 @@ process.env.NODE_ENV = 'test';
 require('dotenv').config();
 
 const { Op } = require('sequelize');
-const { User, Order, OrderItem, Cart, CartItem } = require('../models');
+const { User, Order, OrderItem, Cart, CartItem, Product, Category } = require('../models');
 
 const TEST_EMAIL_PATTERNS = [
   'admin-analytics-%@test.com',
@@ -21,7 +21,9 @@ const TEST_EMAIL_PATTERNS = [
   'multi-oauth-%@test.com',
   'switch-oauth-%@test.com',
   'admin-upload-%@test.com',
-  'customer-upload-%@test.com'
+  'customer-upload-%@test.com',
+  'auth_test_%@example.com',
+  'integration_%@example.com'
 ];
 
 module.exports = async () => {
@@ -36,33 +38,61 @@ module.exports = async () => {
     });
 
     const userIds = users.map(user => user.id);
-    if (!userIds.length) {
-      return;
+
+    if (userIds.length) {
+      const orders = await Order.findAll({
+        attributes: ['id'],
+        where: { userId: userIds }
+      });
+      const orderIds = orders.map(order => order.id);
+
+      if (orderIds.length) {
+        await OrderItem.destroy({ where: { orderId: orderIds } });
+        await Order.destroy({ where: { id: orderIds } });
+      }
+
+      const carts = await Cart.findAll({
+        attributes: ['id'],
+        where: { userId: userIds }
+      });
+      const cartIds = carts.map(cart => cart.id);
+
+      if (cartIds.length) {
+        await CartItem.destroy({ where: { cartId: cartIds } });
+        await Cart.destroy({ where: { id: cartIds } });
+      }
+
+      await User.destroy({ where: { id: userIds }, force: true });
     }
 
-    const orders = await Order.findAll({
+    // Always sweep integration products/categories even if no matching users were found.
+    const products = await Product.findAll({
       attributes: ['id'],
-      where: { userId: userIds }
+      where: {
+        [Op.or]: [
+          { name: { [Op.iLike]: '%integration%' } },
+          { slug: { [Op.iLike]: '%integration%' } },
+          { description: { [Op.iLike]: '%integration%' } }
+        ]
+      }
     });
-    const orderIds = orders.map(order => order.id);
+    const productIds = products.map(product => product.id);
 
-    if (orderIds.length) {
-      await OrderItem.destroy({ where: { orderId: orderIds } });
-      await Order.destroy({ where: { id: orderIds } });
+    if (productIds.length) {
+      await CartItem.destroy({ where: { productId: productIds } });
+      await OrderItem.destroy({ where: { productId: productIds } });
+      await Product.destroy({ where: { id: productIds }, force: true });
     }
 
-    const carts = await Cart.findAll({
-      attributes: ['id'],
-      where: { userId: userIds }
+    await Category.destroy({
+      where: {
+        [Op.or]: [
+          { name: { [Op.iLike]: '%integration%' } },
+          { slug: { [Op.iLike]: 'integration-category-%' } },
+          { description: { [Op.iLike]: '%integration%' } }
+        ]
+      }
     });
-    const cartIds = carts.map(cart => cart.id);
-
-    if (cartIds.length) {
-      await CartItem.destroy({ where: { cartId: cartIds } });
-      await Cart.destroy({ where: { id: cartIds } });
-    }
-
-    await User.destroy({ where: { id: userIds } });
   } catch (error) {
     console.warn('Global teardown cleanup skipped:', error.message);
   }
