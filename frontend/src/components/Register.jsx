@@ -6,7 +6,6 @@ import { FiEye, FiEyeOff, FiAlertCircle } from "react-icons/fi";
 import { authService } from "@/services/authentication"; 
 import { toast } from "react-hot-toast";
 
-
 export default function Register() {
   const [form, setForm] = useState({ firstName: "", lastName: "", email: "", password: "" });
   const [showPassword, setShowPassword] = useState(false);
@@ -17,6 +16,28 @@ export default function Register() {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
+  // Helper functions for validation
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  const hasNumbers = (string) => /\d/.test(string);
+
+  // Password strength calculator (Fixed Levels)
+  const calculateStrength = (pass) => {
+    if (!pass) return { level: 0, text: "", color: "bg-transparent", textColor: "" };
+    
+    let score = 0;
+    if (pass.length >= 8) score += 1; // 1
+    if (/[A-Z]/.test(pass) && /[a-z]/.test(pass)) score += 1; // 2
+    if (/\d/.test(pass)) score += 1; // 3
+    if (/[^A-Za-z0-9]/.test(pass)) score += 1; // 4
+
+    // Map the raw score (0-4) to visual levels (1-3)
+    if (score <= 2) return { level: 1, text: "Weak", color: "bg-[#d32f2f]", textColor: "text-[#d32f2f]" };
+    if (score === 3) return { level: 2, text: "Medium", color: "bg-yellow-500", textColor: "text-yellow-600" };
+    return { level: 3, text: "Strong", color: "bg-green-500", textColor: "text-green-600" };
+  };
+
+  const strength = calculateStrength(form.password);
+
   const handle = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
   const handleBlur = (name) => {
@@ -25,14 +46,25 @@ export default function Register() {
   };
 
   const errors = {
-    firstName: touched.firstName && !form.firstName ? "Please input your first name" : "",
-    lastName: touched.lastName && !form.lastName ? "Please input your last name" : "",
-    email: touched.email && !form.email ? "Please input your email" : "",
-    password:
-      touched.password && !form.password
+    firstName: touched.firstName && !form.firstName 
+        ? "Please input your first name" 
+        : touched.firstName && hasNumbers(form.firstName) 
+        ? "First name cannot contain numbers" 
+        : "",
+    lastName: touched.lastName && !form.lastName 
+        ? "Please input your last name" 
+        : touched.lastName && hasNumbers(form.lastName) 
+        ? "Last name cannot contain numbers" 
+        : "",
+    email: touched.email && !form.email 
+        ? "Please input your email" 
+        : touched.email && !emailRegex.test(form.email) 
+        ? "Please enter a valid email address" 
+        : "",
+    password: touched.password && !form.password
         ? "Please input your password"
-        : touched.password && form.password.length < 6
-        ? "Password must have at least 6 characters"
+        : touched.password && form.password.length < 8
+        ? "Password must have at least 8 characters"
         : "",
   };
 
@@ -50,19 +82,36 @@ export default function Register() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setApiError("");
     
-    if (errors.firstName || errors.lastName || errors.email || errors.password) {
-      setTouched({ firstName: true, lastName: true, email: true, password: true });
-      return; 
-    }
+    // Mark all fields as touched so UI errors show up
+    setTouched({ firstName: true, lastName: true, email: true, password: true });
 
+    // 1. Check for empty fields
     if (!form.firstName || !form.lastName || !form.email || !form.password) {
       setApiError("Please fill out all fields.");
       return;
     }
 
+    // 2. Check for numbers in names
+    if (hasNumbers(form.firstName) || hasNumbers(form.lastName)) {
+      setApiError("Names cannot contain numbers.");
+      return;
+    }
+
+    // 3. Strict Email Validation
+    if (!emailRegex.test(form.email)) {
+      setApiError("Please enter a valid email address.");
+      return;
+    }
+
+    // 4. Strict Password Validation
+    if (form.password.length < 8) {
+      setApiError("Password must have at least 8 characters.");
+      return;
+    }
+
     setIsLoading(true);
-    setApiError("");
 
     try {
       const userData = {
@@ -165,7 +214,7 @@ export default function Register() {
             <div className="relative">
               <input
                 name="email"
-                type="email"
+                type="text"
                 value={form.email}
                 onChange={handle}
                 onFocus={() => setFocused("email")}
@@ -210,6 +259,22 @@ export default function Register() {
                 {showPassword ? <FiEye size={20} /> : <FiEyeOff size={20} />}
               </button>
             </div>
+            
+            {/* Password Strength Indicator */}
+            {form.password && (
+              <div className="mt-2 flex items-center gap-2">
+                <div className="flex-1 flex gap-1 h-1.5">
+                  {/* Changed strength.score to strength.level here */}
+                  <div className={`flex-1 rounded-full ${strength.level >= 1 ? strength.color : 'bg-gray-200'}`}></div>
+                  <div className={`flex-1 rounded-full ${strength.level >= 2 ? strength.color : 'bg-gray-200'}`}></div>
+                  <div className={`flex-1 rounded-full ${strength.level >= 3 ? strength.color : 'bg-gray-200'}`}></div>
+                </div>
+                <span className={`text-[11px] font-semibold ${strength.textColor} w-12 text-right`}>
+                  {strength.text}
+                </span>
+              </div>
+            )}
+            
             {errors.password && (
               <p className="text-[#d32f2f] text-xs mt-1.5 font-medium">{errors.password}</p>
             )}

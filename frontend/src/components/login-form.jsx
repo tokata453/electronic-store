@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, Link, useLocation } from "react-router-dom"; // Added useLocation
+import { useNavigate, Link, useLocation } from "react-router-dom"; 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -10,7 +10,7 @@ import { FcGoogle } from "react-icons/fc";
 import { FiEye, FiEyeOff } from "react-icons/fi";
 import { toast } from "react-hot-toast";
 import { authService } from "@/services/authentication";
-import { mergeCarts } from "@/services/cart"; // Added this
+import { mergeCarts } from "@/services/cart"; 
 
 export default function LoginForm({ className, ...props }) {
   const [email, setEmail] = useState("");
@@ -22,7 +22,6 @@ export default function LoginForm({ className, ...props }) {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Look for a redirect URL (e.g., if they came from Checkout)
   const searchParams = new URLSearchParams(location.search);
   const redirectUrl = searchParams.get('redirect') || '/';
 
@@ -31,6 +30,14 @@ export default function LoginForm({ className, ...props }) {
     setError("");
     setIsLoading(true);
 
+    // Validate Email Regex before sending
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      setError("Please enter a valid email address.");
+      setIsLoading(false);
+      return;
+    }
+
     try {
       const result = await authService.login(email, password);
 
@@ -38,19 +45,16 @@ export default function LoginForm({ className, ...props }) {
         localStorage.setItem("token", result.data.token);
         localStorage.setItem("user", JSON.stringify(result.data.user));
 
-        // CHECK FOR GUEST CART MERGE
         const guestSessionId = localStorage.getItem('guest_session_id');
         if (guestSessionId) {
           try {
             await mergeCarts(guestSessionId);
-            // Optionally clear the guest session ID after a successful merge
             localStorage.removeItem('guest_session_id'); 
           } catch (mergeErr) {
             console.error("Failed to merge cart, but login successful", mergeErr);
           }
         }
         toast.success("Login successful! Welcome back.");
-        // Redirect Admin or send User back to where they came from
         if (result.data.user.role === "admin") navigate("/admin/products");
         else navigate(redirectUrl); 
 
@@ -67,7 +71,6 @@ export default function LoginForm({ className, ...props }) {
   return (
     <div className={cn("flex items-center justify-center min-h-[85vh] bg-[#f8f9fa] p-5 font-sans w-full", className)} {...props}>
       <div className="w-full max-w-md">
-        {/* If they were redirected from checkout, show a friendly message */}
         {redirectUrl.includes('checkout') && (
             <div className="mb-4 p-4 bg-blue-50 border border-blue-200 text-blue-800 rounded-xl text-center text-sm font-medium">
                 Please sign in to complete your checkout.
@@ -97,7 +100,7 @@ export default function LoginForm({ className, ...props }) {
                   <FieldLabel htmlFor="email" className="text-[#191c1d] font-medium text-sm">Email</FieldLabel>
                   <Input 
                     id="email" 
-                    type="email" 
+                    type="text" 
                     placeholder="name@example.com" 
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
@@ -181,7 +184,6 @@ export default function LoginForm({ className, ...props }) {
 
                   <FieldDescription className="text-center mt-6 text-sm text-[#191c1d]/60">
                     Don&apos;t have an account?{" "}
-                    {/* Pass the redirect URL to the register page so it remembers where to go! */}
                     <Link to={`/register?redirect=${encodeURIComponent(redirectUrl)}`} className="text-[#003d9b] font-semibold hover:underline transition-all">
                       Create an account
                     </Link>
