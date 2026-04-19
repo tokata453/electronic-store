@@ -30,6 +30,6 @@ jobs:
             set -e
             cd electronic-store/backend
             git pull origin main
-            npm ci --omit=dev
+            npm install
             pm2 reload backend
           EOF
