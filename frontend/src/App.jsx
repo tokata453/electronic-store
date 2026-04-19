@@ -27,6 +27,8 @@ import { Toaster } from 'react-hot-toast';
 import HelpCenterPage from './pages/HelpCenterPage';
 import ContactPage from './pages/ContactPage';
 import HomeCategoriesPage from './pages/HomeCategoriesPage';
+import AuthCallbackPage from './pages/AuthCallbackPage';
+import AuthErrorPage from './pages/AuthErrorPage';
 
 const router = createBrowserRouter([
   {
@@ -44,6 +46,14 @@ const router = createBrowserRouter([
       {
         path: "register",
         element: <Register />,
+      },
+      {
+        path: "auth/callback",
+        element: <AuthCallbackPage />,
+      },
+      {
+        path: "auth/error",
+        element: <AuthErrorPage />,
       },
       {
         path: "products",
