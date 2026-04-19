@@ -5,6 +5,7 @@ module.exports = defineConfig({
     environment: 'node',
     globals: true,
     setupFiles: ['./tests/setup.js'],
+    globalTeardown: './tests/globalTeardown.js',
     include: ['tests/**/*.test.js'],
   },
 });

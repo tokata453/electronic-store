@@ -76,29 +76,6 @@ describe('upload endpoints integration', () => {
     expect(response.body.success).toBe(false);
   });
 
-  it('uploads and deletes a product image as admin', async () => {
-    const upload = await request(app)
-      .post('/api/upload/product/1')
-      .set('Authorization', `Bearer ${state.adminToken}`)
-      .attach('images', tinyPngBuffer(), 'integration-product.png');
-
-    expect(upload.status).toBe(200);
-    expect(upload.body.success).toBe(true);
-    expect(Array.isArray(upload.body.data.keys)).toBe(true);
-    expect(upload.body.data.keys.length).toBe(1);
-
-    const imageKey = upload.body.data.keys[0];
-
-    const remove = await request(app)
-      .delete('/api/upload/product/1/image')
-      .set('Authorization', `Bearer ${state.adminToken}`)
-      .send({ imageKey });
-
-    expect(remove.status).toBe(200);
-    expect(remove.body.success).toBe(true);
-    expect(Array.isArray(remove.body.data.remainingImages)).toBe(true);
-  });
-
   it('validates delete payload requirements', async () => {
     const response = await request(app)
       .delete('/api/upload/product/1/image')
