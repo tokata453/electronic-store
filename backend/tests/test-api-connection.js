@@ -1,8 +1,9 @@
 // test-api-connection.js
 const axios = require('axios');
+require('dotenv').config();
 
-const BASE_URL = `http://localhost:${process.env.PORT || 3001}`;
-// const BASE_URL = `https://electronic-store-production-0f93.up.railway.app`; // Change to your deployed URL if testing against production
+// const BASE_URL = `http://localhost:${process.env.PORT || 3001}`;
+const BASE_URL = process.env.TEST_BASE_URL || 'http://localhost:3001'; // Change to your deployed URL if testing against production
 
 // Colors for console
 const colors = {
