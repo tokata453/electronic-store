@@ -17,22 +17,29 @@ const slides = [
     title: "Summer Collection",
     description: "Discover our latest summer styles designed for comfort and elegance.",
     cta: "Shop Now",
-    image: "/test.webp",
+    image: "/Carousal/Lenovo.jpg",
   },
   {
     id: 2,
     title: "New Arrivals",
     description: "Be the first to explore our brand new inventory hitting the shelves today.",
     cta: "View New",
-    image: "https://images.unsplash.com/photo-1540221652346-e5dd6b50f3e7?auto=format&fit=crop&q=80&w=2000",
+    image: "/Carousal/headphones.jpg",
   },
   {
     id: 3,
     title: "Exclusive Offers",
     description: "Members get up to 50% off on selected items this weekend only.",
     cta: "Join Now",
-    image: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&q=80&w=2000",
+    image: "/Carousal/Phone.jpg",
   },
+  {
+    id: 4,
+    title: "Exclusive Offers",
+    description: "Members get up to 50% off on selected items this weekend only.",
+    cta: "Join Now",
+    image: "/Carousal/Logitech-Gaming.jpg",
+  }
 ]
 
 export default function HeroCarousel () {
