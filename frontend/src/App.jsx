@@ -12,6 +12,7 @@ import Register from './components/Register';
 import ProductsPage from "./admin/products/ProductsPage";
 import ProductFormPage from "./admin/products/ProductFormPage";
 import SettingsPage from "./admin/products/SettingsPage";
+import OutOfStockProductsPage from "./admin/products/OutOfStockProductsPage";
 import SearchResults from './pages/SearchResults';
 import CategoryPage from './pages/CategoryPage';
 import { ThemeProvider } from './admin/products/ThemeContext.jsx';
@@ -133,6 +134,10 @@ const router = createBrowserRouter([
           {
             path: "products",
             element: <ProductsPage />,
+          },
+          {
+            path: "products/out-of-stock",
+            element: <OutOfStockProductsPage />,
           },
           {
             path: "products/new",

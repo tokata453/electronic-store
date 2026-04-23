@@ -4,6 +4,7 @@ import { useTheme } from "./products/useTheme";
 import {
   BarChart3,
   Package,
+  AlertTriangle,
   LayoutGrid,
   ShoppingCart,
   Users,
@@ -125,6 +126,22 @@ export default function AdminLayout() {
           >
             <span className="flex items-center gap-2">
               <Package size={18} /> {!collapsed && "Products"}
+            </span>
+          </NavLink>
+
+          <NavLink
+            to="/admin/products/out-of-stock"
+            end
+            className={({ isActive }) =>
+              `rounded-lg px-3 py-2 text-sm transition
+              ${isActive
+                ? dark ? "bg-slate-800 text-white" : "bg-slate-200 text-slate-900"
+                : dark ? "text-slate-300 hover:bg-slate-800" : "text-slate-600 hover:bg-slate-100"
+              }`
+            }
+          >
+            <span className="flex items-center gap-2">
+              <AlertTriangle size={18} /> {!collapsed && "Out of Stock"}
             </span>
           </NavLink>
 
