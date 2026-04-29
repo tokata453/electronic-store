@@ -4,6 +4,7 @@ const { sequelize } = require('../models');
 const { Op } = require('sequelize');
 const appError = require('../utils/appError');
 const { generatePresignedUrl } = require('../utils/bucket');
+const { sendOrderConfirmationEmail } = require('../utils/emailService');
 
 const VALID_ORDER_STATUSES = ['pending', 'processing', 'shipped', 'delivered', 'cancelled', 'refunded'];
 const VALID_PAYMENT_METHODS = ['credit_card', 'paypal', 'cod', 'bank_transfer', 'aba', 'acleda'];
@@ -226,6 +227,20 @@ const createOrder = async (req, res, next) => {
         }
       ]
     });
+
+    // Send order confirmation email
+    if (req.user && req.user.email) {
+      // Pass the email, and the order data we need for the template
+      await sendOrderConfirmationEmail(req.user.email, {
+        orderNumber: completeOrder.orderNumber,
+        totalAmount: completeOrder.totalAmount,
+        items: completeOrder.items.map(item => ({
+            productName: item.productName,
+            quantity: item.quantity,
+            price: item.price
+        }))
+      });
+    }
 
     res.status(201).json({
       success: true,

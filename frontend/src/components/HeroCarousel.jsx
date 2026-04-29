@@ -62,13 +62,7 @@ export default function HeroCarousel () {
                   className="absolute inset-0 h-full w-full object-cover"
                 />
                 <div className="absolute inset-0 bg-black/40" />
-                <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center text-white">
-                  <h2 className="mb-2 text-3xl font-bold">{slide.title}</h2>
-                  <p className="mb-6 max-w-md text-sm font-medium opacity-90">
-                    {slide.description}
-                  </p>
-                  <Button variant="secondary">{slide.cta}</Button>
-                </div>
+                
               </div>
             </CarouselItem>
           ))}
