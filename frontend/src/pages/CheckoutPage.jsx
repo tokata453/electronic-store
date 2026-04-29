@@ -4,6 +4,7 @@ import { placeOrder } from "@/services/order";
 import { getCart } from "@/services/cart";
 import { getUserProfile } from "@/services/user";
 import { Lock, ArrowRight, CreditCard, ShieldCheck, Info } from "lucide-react";
+import { toast } from "react-hot-toast"
 
 export default function CheckoutPage() {
   const navigate = useNavigate();
@@ -40,6 +41,7 @@ export default function CheckoutPage() {
         setCart(cartData);
       } catch (err) {
         console.error("Could not fetch cart");
+        toast.error("Failed to fetch cart items.");
       }
     };
     
@@ -113,6 +115,9 @@ export default function CheckoutPage() {
     try {
       const result = await placeOrder(orderPayload);
       if (result.success) {
+        toast.success(
+          "Your order has been successfully placed. A confirmation has been sent to your email."
+        );
         navigate("/");
       }
     } catch (err) {

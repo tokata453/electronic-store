@@ -47,6 +47,10 @@ export default function Header() {
       }
     };
     fetchCartData();
+    window.addEventListener('cartUpdated', fetchCartData);
+    return () => {
+      window.removeEventListener('cartUpdated', fetchCartData);
+    };
   }, [location.pathname]);
 
   useEffect(() => {
@@ -142,11 +146,45 @@ export default function Header() {
         </div>
 
         {/* Navigation Links */}
+        {/* Navigation Links */}
         <nav className="hidden lg:block ml-4">
           <ul className="flex items-center gap-6 text-[12px] font-semibold tracking-[0.05em] uppercase">
-            <li><Link to="/products" className="text-[#191c1d] hover:text-[#003d9b] transition-colors">Products</Link></li>
-            <li><Link to="/trending" className="text-[#191c1d]/70 hover:text-[#003d9b] transition-colors">Trending</Link></li>
-            <li><Link to="/contact" className="text-[#191c1d]/70 hover:text-[#003d9b] transition-colors">Contact Us</Link></li>
+            <li>
+              <Link 
+                to="/products" 
+                className={`transition-colors ${
+                  location.pathname.startsWith("/products") 
+                    ? "text-[#003d9b]" 
+                    : "text-[#191c1d] hover:text-[#003d9b]"
+                }`}
+              >
+                Products
+              </Link>
+            </li>
+            <li>
+              <Link 
+                to="/trending" 
+                className={`transition-colors ${
+                  location.pathname.startsWith("/trending") 
+                    ? "text-[#003d9b]" 
+                    : "text-[#191c1d]/70 hover:text-[#003d9b]"
+                }`}
+              >
+                Trending
+              </Link>
+            </li>
+            <li>
+              <Link 
+                to="/contact" 
+                className={`transition-colors ${
+                  location.pathname === "/contact" 
+                    ? "text-[#003d9b]" 
+                    : "text-[#191c1d]/70 hover:text-[#003d9b]"
+                }`}
+              >
+                Contact Us
+              </Link>
+            </li>
           </ul>
         </nav>
       </div>
@@ -196,10 +234,13 @@ export default function Header() {
         )}
 
         {/* Cart */}
+        {/* Cart */}
         <Link to="/cart" className="p-2 text-[#191c1d] hover:text-[#003d9b] hover:bg-[#f3f4f5] rounded-full transition-colors relative">
           <ShoppingCart size={20} strokeWidth={1.5} />
           {cartItemCount > 0 && (
-            <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-[#003d9b] rounded-full border-2 border-white shadow-sm"></span>
+            <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 flex items-center justify-center bg-[#003d9b] text-white text-[10px] font-bold rounded-full border-2 border-white shadow-sm">
+              {cartItemCount > 9 ? "9+" : cartItemCount}
+            </span>
           )}
         </Link>
 

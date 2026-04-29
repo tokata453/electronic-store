@@ -16,6 +16,7 @@ export const addToCart = async (productId, quantity = 1) => {
             productId: Number(productId), 
             quantity: Number(quantity) 
         });
+        window.dispatchEvent(new Event('cartUpdated'));
         return response.data.data;
     } catch (error) {
         console.error("Failed to add to cart:", error);
